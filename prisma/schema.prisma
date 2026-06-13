@@ -1,0 +1,688 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════
+// 1. Users & Auth
+// ═══════════════════════════════════════
+
+enum UserRole {
+  rehjoo
+  rahbalad
+  admin
+}
+
+enum ThemePref {
+  auto
+  dark
+  light
+}
+
+model User {
+  id                String    @id @default(uuid())
+  phone             String    @unique
+  name              String?
+  role              UserRole  @default(rehjoo)
+  avatarUrl         String?   @map("avatar_url")
+  isActive          Boolean   @default(true) @map("is_active")
+  onboardingAnswers Json?     @map("onboarding_answers")
+  themePref         ThemePref @default(auto) @map("theme_pref")
+  streakCount       Int       @default(0) @map("streak_count")
+  xpPoints          Int       @default(0) @map("xp_points")
+  level             Int       @default(1)
+  lastActiveAt      DateTime? @map("last_active_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  coachProfile         CoachProfile?
+  adminRole            AdminRole?
+  bookings             Booking[]
+  payments             Payment[]
+  sentMessages         Message[]              @relation("sender")
+  receivedMessages     Message[]              @relation("receiver")
+  writtenReviews       Review[]
+  moods                Mood[]
+  habits               Habit[]                @relation("userHabits")
+  assignedHabits       Habit[]                @relation("coachAssigned")
+  goals                Goal[]
+  journalEntries       JournalEntry[]
+  challengeParticipants ChallengeParticipant[]
+  inspirationPosts     InspirationPost[]
+  reactions            Reaction[]
+  supportTickets       SupportTicket[]        @relation("ticketUser")
+  assignedTickets      SupportTicket[]        @relation("ticketAgent")
+  notifications        Notification[]
+
+  @@map("users")
+}
+
+enum AdminRoleType {
+  super_admin
+  support_manager
+  support_agent
+}
+
+model AdminRole {
+  id        String        @id @default(uuid())
+  userId    String        @unique @map("user_id")
+  role      AdminRoleType
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_roles")
+}
+
+// ═══════════════════════════════════════
+// 2. Coach Profile
+// ═══════════════════════════════════════
+
+enum GenderAccept {
+  all
+  female_only
+  male_only
+}
+
+enum CoachStatus {
+  pending
+  approved
+  rejected
+}
+
+model CoachProfile {
+  id              String       @id @default(uuid())
+  userId          String       @unique @map("user_id")
+  shortBio        String?      @map("short_bio") @db.VarChar(200)
+  fullBio         String?      @map("full_bio")
+  genderAccept    GenderAccept @default(all) @map("gender_accept")
+  voiceIntroUrl   String?      @map("voice_intro_url")
+  videoIntroUrl   String?      @map("video_intro_url")
+  status          CoachStatus  @default(pending)
+  rejectionReason String?      @map("rejection_reason")
+  commissionRate  Decimal      @default(0.70) @map("commission_rate") @db.Decimal(3, 2)
+  totalSessions   Int          @default(0) @map("total_sessions")
+  avgRating       Decimal      @default(0.0) @map("avg_rating") @db.Decimal(2, 1)
+  approvedAt      DateTime?    @map("approved_at")
+  approvedBy      String?      @map("approved_by")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specializations CoachSpecialization[]
+  certificates    Certificate[]
+  packages        Package[]
+  timeSlots       TimeSlot[]
+  bookings        Booking[]
+  reviews         Review[]
+  wallet          Wallet?
+
+  @@map("coach_profiles")
+}
+
+model Specialization {
+  id   String @id @default(uuid())
+  name String @unique @db.VarChar(50)
+  slug String @unique @db.VarChar(50)
+  icon String? @db.VarChar(10)
+
+  coaches CoachSpecialization[]
+
+  @@map("specializations")
+}
+
+model CoachSpecialization {
+  coachId String @map("coach_id")
+  specId  String @map("spec_id")
+
+  coach CoachProfile   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  spec  Specialization @relation(fields: [specId], references: [id], onDelete: Cascade)
+
+  @@id([coachId, specId])
+  @@map("coach_specializations")
+}
+
+model Certificate {
+  id        String   @id @default(uuid())
+  coachId   String   @map("coach_id")
+  title     String   @db.VarChar(200)
+  issuer    String   @db.VarChar(200)
+  year      Int
+  imageUrl  String?  @map("image_url")
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coach CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+// ═══════════════════════════════════════
+// 3. Booking & Sessions
+// ═══════════════════════════════════════
+
+model Package {
+  id              String  @id @default(uuid())
+  coachId         String  @map("coach_id")
+  name            String  @db.VarChar(100)
+  description     String?
+  sessionCount    Int     @map("session_count")
+  durationMinutes Int     @default(60) @map("duration_minutes")
+  priceToman      Int     @map("price_toman")
+  includesChat    Boolean @default(false) @map("includes_chat")
+  isIntro         Boolean @default(false) @map("is_intro")
+  isActive        Boolean @default(true) @map("is_active")
+  sortOrder       Int     @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  coach    CoachProfile   @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("packages")
+}
+
+model TimeSlot {
+  id          String  @id @default(uuid())
+  coachId     String  @map("coach_id")
+  dayOfWeek   Int     @map("day_of_week") // 0=شنبه
+  startTime   String  @map("start_time") @db.VarChar(5) // "16:00"
+  endTime     String  @map("end_time") @db.VarChar(5)   // "20:00"
+  isAvailable Boolean @default(true) @map("is_available")
+
+  coach CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@map("time_slots")
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  completed
+  cancelled_by_coach
+  cancelled_by_user
+  no_show
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  coachId       String        @map("coach_id")
+  packageId     String        @map("package_id")
+  sessionNumber Int           @default(1) @map("session_number")
+  sessionDate   DateTime      @map("session_date") @db.Date
+  sessionTime   String        @map("session_time") @db.VarChar(5)
+  status        BookingStatus @default(pending)
+  jitsiRoomId   String?       @map("jitsi_room_id") @db.VarChar(100)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user    User         @relation(fields: [userId], references: [id])
+  coach   CoachProfile @relation(fields: [coachId], references: [id])
+  package Package      @relation(fields: [packageId], references: [id])
+  session Session?
+  payment Payment?
+
+  @@index([userId])
+  @@index([coachId])
+  @@index([sessionDate])
+  @@map("bookings")
+}
+
+enum SessionStatus {
+  scheduled
+  in_progress
+  completed
+  disputed
+}
+
+model Session {
+  id              String        @id @default(uuid())
+  bookingId       String        @unique @map("booking_id")
+  status          SessionStatus @default(scheduled)
+  confirmedByUser Boolean       @default(false) @map("confirmed_by_user")
+  autoConfirmAt   DateTime?     @map("auto_confirm_at")
+  coachNotes      String?       @map("coach_notes")
+  startedAt       DateTime?     @map("started_at")
+  endedAt         DateTime?     @map("ended_at")
+
+  booking             Booking              @relation(fields: [bookingId], references: [id])
+  review              Review?
+  walletTransactions  WalletTransaction[]
+
+  @@index([status])
+  @@map("sessions")
+}
+
+// ═══════════════════════════════════════
+// 4. Communications
+// ═══════════════════════════════════════
+
+model Message {
+  id            String   @id @default(uuid())
+  senderId      String   @map("sender_id")
+  receiverId    String   @map("receiver_id")
+  content       String
+  attachmentUrl String?  @map("attachment_url")
+  isRead        Boolean  @default(false) @map("is_read")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  sender   User @relation("sender", fields: [senderId], references: [id])
+  receiver User @relation("receiver", fields: [receiverId], references: [id])
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  coachId     String   @map("coach_id")
+  sessionId   String   @unique @map("session_id")
+  rating      Int      // 1-5
+  comment     String?
+  isAnonymous Boolean  @default(false) @map("is_anonymous")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user    User         @relation(fields: [userId], references: [id])
+  coach   CoachProfile @relation(fields: [coachId], references: [id])
+  session Session      @relation(fields: [sessionId], references: [id])
+
+  @@map("reviews")
+}
+
+// ═══════════════════════════════════════
+// 5. Financial
+// ═══════════════════════════════════════
+
+enum PaymentMethod {
+  zarinpal
+  snappay
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  bookingId        String        @unique @map("booking_id")
+  amountToman      Int           @map("amount_toman")
+  method           PaymentMethod
+  status           PaymentStatus @default(pending)
+  gatewayRef       String?       @map("gateway_ref") @db.VarChar(100)
+  platformShare    Int           @map("platform_share")
+  coachShare       Int           @map("coach_share")
+  isInstallment    Boolean       @default(false) @map("is_installment")
+  installmentCount Int?          @map("installment_count")
+  discountCodeId   String?       @map("discount_code_id")
+  discountAmount   Int           @default(0) @map("discount_amount")
+  paidAt           DateTime?     @map("paid_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id])
+  booking      Booking       @relation(fields: [bookingId], references: [id])
+  discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Wallet {
+  id              String   @id @default(uuid())
+  coachId         String   @unique @map("coach_id")
+  totalEarned     Int      @default(0) @map("total_earned")
+  lockedAmount    Int      @default(0) @map("locked_amount")
+  availableAmount Int      @default(0) @map("available_amount")
+  shebaNumber     String?  @map("sheba_number") @db.VarChar(26)
+  accountHolder   String?  @map("account_holder") @db.VarChar(100)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  coach          CoachProfile        @relation(fields: [coachId], references: [id])
+  transactions   WalletTransaction[]
+  payoutRequests PayoutRequest[]
+
+  @@map("wallets")
+}
+
+enum WalletTransactionType {
+  lock
+  release
+  burn
+  payout
+}
+
+model WalletTransaction {
+  id          String                @id @default(uuid())
+  walletId    String                @map("wallet_id")
+  sessionId   String?               @map("session_id")
+  amount      Int
+  type        WalletTransactionType
+  description String?
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  wallet  Wallet   @relation(fields: [walletId], references: [id])
+  session Session? @relation(fields: [sessionId], references: [id])
+
+  @@index([walletId])
+  @@map("wallet_transactions")
+}
+
+enum PayoutStatus {
+  pending
+  approved
+  transferred
+  rejected
+}
+
+model PayoutRequest {
+  id            String       @id @default(uuid())
+  walletId      String       @map("wallet_id")
+  amount        Int
+  status        PayoutStatus @default(pending)
+  approvedBy    String?      @map("approved_by")
+  payaRef       String?      @map("paya_ref") @db.VarChar(100)
+  requestedAt   DateTime     @default(now()) @map("requested_at")
+  transferredAt DateTime?    @map("transferred_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("payout_requests")
+}
+
+enum DiscountType {
+  percentage
+  fixed
+}
+
+model DiscountCode {
+  id            String       @id @default(uuid())
+  code          String       @unique @db.VarChar(20)
+  type          DiscountType
+  value         Int
+  maxUses       Int          @map("max_uses")
+  usedCount     Int          @default(0) @map("used_count")
+  targetPackage String?      @map("target_package")
+  isActive      Boolean      @default(true) @map("is_active")
+  expiresAt     DateTime?    @map("expires_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  payments Payment[]
+
+  @@map("discount_codes")
+}
+
+// ═══════════════════════════════════════
+// 6. Growth (رشد فردی)
+// ═══════════════════════════════════════
+
+enum MoodType {
+  great
+  good
+  normal
+  stressed
+  tired
+}
+
+model Mood {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  mood       MoodType
+  loggedDate DateTime @map("logged_date") @db.Date
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, loggedDate])
+  @@index([userId, loggedDate])
+  @@map("moods")
+}
+
+enum HabitFrequency {
+  daily
+  weekly
+}
+
+model Habit {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  title       String         @db.VarChar(100)
+  description String?
+  frequency   HabitFrequency @default(daily)
+  isActive    Boolean        @default(true) @map("is_active")
+  assignedBy  String?        @map("assigned_by")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  user     User       @relation("userHabits", fields: [userId], references: [id])
+  assigner User?      @relation("coachAssigned", fields: [assignedBy], references: [id])
+  logs     HabitLog[]
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id         String   @id @default(uuid())
+  habitId    String   @map("habit_id")
+  loggedDate DateTime @map("logged_date") @db.Date
+  completed  Boolean  @default(false)
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, loggedDate])
+  @@index([habitId, loggedDate])
+  @@map("habit_logs")
+}
+
+enum GoalStatus {
+  active
+  completed
+  paused
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  title       String     @db.VarChar(200)
+  description String?
+  progressPct Int        @default(0) @map("progress_pct")
+  isPrivate   Boolean    @default(true) @map("is_private")
+  targetDate  DateTime?  @map("target_date") @db.Date
+  status      GoalStatus @default(active)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("goals")
+}
+
+enum JournalType {
+  gratitude
+  reflection
+  freewrite
+}
+
+model JournalEntry {
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  type       JournalType
+  content    String
+  loggedDate DateTime    @map("logged_date") @db.Date
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("journal_entries")
+}
+
+// ═══════════════════════════════════════
+// 7. Community (قبیله)
+// ═══════════════════════════════════════
+
+enum ChallengeStatus {
+  upcoming
+  active
+  completed
+}
+
+model Challenge {
+  id               String          @id @default(uuid())
+  title            String          @db.VarChar(200)
+  description      String?
+  durationDays     Int             @map("duration_days")
+  createdBy        String          @map("created_by")
+  status           ChallengeStatus @default(upcoming)
+  participantCount Int             @default(0) @map("participant_count")
+  startsAt         DateTime        @map("starts_at")
+  endsAt           DateTime        @map("ends_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  participants ChallengeParticipant[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  challengeId   String   @map("challenge_id")
+  currentStreak Int      @default(0) @map("current_streak")
+  isAnonymous   Boolean  @default(false) @map("is_anonymous")
+  joinedAt      DateTime @default(now()) @map("joined_at")
+
+  user      User      @relation(fields: [userId], references: [id])
+  challenge Challenge @relation(fields: [challengeId], references: [id])
+
+  @@unique([userId, challengeId])
+  @@map("challenge_participants")
+}
+
+enum PostTemplate {
+  book_quote
+  achievement
+  gratitude
+}
+
+model InspirationPost {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  template      PostTemplate
+  content       String
+  isAnonymous   Boolean      @default(false) @map("is_anonymous")
+  isVisible     Boolean      @default(true) @map("is_visible")
+  reactionCount Int          @default(0) @map("reaction_count")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  user      User       @relation(fields: [userId], references: [id])
+  reactions Reaction[]
+
+  @@index([isVisible, createdAt])
+  @@map("inspiration_posts")
+}
+
+enum ReactionType {
+  strong  // 💪 دمت گرم
+  growing // 🌱 در حال رشد
+  love    // 🤍 حس خوب
+  fire    // 🔥 پرانرژی
+}
+
+model Reaction {
+  id        String       @id @default(uuid())
+  userId    String       @map("user_id")
+  postId    String       @map("post_id")
+  type      ReactionType
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  user User            @relation(fields: [userId], references: [id])
+  post InspirationPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("reactions")
+}
+
+// ═══════════════════════════════════════
+// 8. Support
+// ═══════════════════════════════════════
+
+enum TicketCategory {
+  technical
+  financial
+  general
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+}
+
+model SupportTicket {
+  id         String         @id @default(uuid())
+  userId     String         @map("user_id")
+  assignedTo String?        @map("assigned_to")
+  category   TicketCategory
+  status     TicketStatus   @default(open)
+  priority   TicketPriority @default(medium)
+  subject    String         @db.VarChar(200)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  resolvedAt DateTime?      @map("resolved_at")
+
+  user  User  @relation("ticketUser", fields: [userId], references: [id])
+  agent User? @relation("ticketAgent", fields: [assignedTo], references: [id])
+
+  @@map("support_tickets")
+}
+
+// ═══════════════════════════════════════
+// 9. Notifications
+// ═══════════════════════════════════════
+
+enum NotificationType {
+  sms
+  push
+  in_app
+  email
+}
+
+enum NotificationCategory {
+  session_reminder
+  booking_confirmed
+  payout
+  challenge
+  system
+}
+
+model Notification {
+  id        String               @id @default(uuid())
+  userId    String               @map("user_id")
+  type      NotificationType
+  category  NotificationCategory
+  title     String               @db.VarChar(200)
+  body      String
+  isRead    Boolean              @default(false) @map("is_read")
+  sentAt    DateTime             @default(now()) @map("sent_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
