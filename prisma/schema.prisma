@@ -80,6 +80,18 @@ model AdminRole {
   @@map("admin_roles")
 }
 
+model OtpCode {
+  id        String   @id @default(uuid())
+  phone     String   @db.VarChar(15)
+  code      String   @db.VarChar(5)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone, createdAt])
+  @@map("otp_codes")
+}
+
 // ═══════════════════════════════════════
 // 2. Coach Profile
 // ═══════════════════════════════════════
