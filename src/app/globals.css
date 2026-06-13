@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── IRANSansX Font ── */
+@font-face {
+  font-family: 'IRANSansX';
+  src: url('/fonts/IRANSansX/IRANSansX-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANSansX';
+  src: url('/fonts/IRANSansX/IRANSansX-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANSansX';
+  src: url('/fonts/IRANSansX/IRANSansX-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IRANSansX';
+  src: url('/fonts/IRANSansX/IRANSansX-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Theme: Morning Focus (Light) ── */
+:root {
+  --surface-primary: #FAFAF9;
+  --surface-secondary: #F1F5F9;
+  --surface-tertiary: #E2E8F0;
+  --surface-card: #FFFFFF;
+  --content-primary: #1E293B;
+  --content-secondary: #475569;
+  --content-tertiary: #94A3B8;
+  --border-color: #E2E8F0;
+}
+
+/* ── Theme: Midnight Reflection (Dark) ── */
+.dark {
+  --surface-primary: #0F172A;
+  --surface-secondary: #1E293B;
+  --surface-tertiary: #334155;
+  --surface-card: #1E293B;
+  --content-primary: #E2E8F0;
+  --content-secondary: #94A3B8;
+  --content-tertiary: #64748B;
+  --border-color: #334155;
+}
+
+/* ── Base Styles ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  direction: rtl;
+  font-family: 'IRANSansX', system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--surface-primary);
+  color: var(--content-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--content-tertiary);
+  border-radius: 999px;
+}
+
+/* ── Selection ── */
+::selection {
+  background-color: #10B98140;
+  color: var(--content-primary);
+}
