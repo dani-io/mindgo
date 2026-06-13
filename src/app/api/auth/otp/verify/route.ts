@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     role: user.role,
   })
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     success: true,
     data: {
       token,
@@ -85,4 +85,15 @@ export async function POST(req: NextRequest) {
       expires_in: 86400,
     },
   })
+
+  // Set cookie so middleware (edge runtime, no localStorage access) can verify auth
+  res.cookies.set('mg_token', token, {
+    httpOnly: false,   // false so client-side code can also read it if needed
+    maxAge: 86400,
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
+
+  return res
 }

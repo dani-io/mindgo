@@ -13,14 +13,19 @@ export async function middleware(req: NextRequest) {
     req.cookies.get('mg_token')?.value ??
     req.headers.get('authorization')?.replace('Bearer ', '')
 
+  console.log(`[middleware] ${pathname} | cookie=${req.cookies.get('mg_token')?.value?.slice(0, 20) ?? 'none'}...`)
+
   if (!token) {
+    console.log('[middleware] no token → redirect /login')
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   const payload = await verifyToken(token)
   if (!payload) {
+    console.log('[middleware] invalid token → redirect /login')
     return NextResponse.redirect(new URL('/login', req.url))
   }
+  console.log(`[middleware] authed uid=${payload.sub} role=${payload.role}`)
 
   // Role-based guard: coach dashboard only for rahbalad
   if (pathname.startsWith('/coach-dashboard') && payload.role !== 'rahbalad') {

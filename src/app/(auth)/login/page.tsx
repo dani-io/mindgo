@@ -59,27 +59,42 @@ export default function LoginPage() {
     }
   }
 
-  async function handleVerifyOtp() {
-    const code = otp.join('')
-    if (code.length !== 5) return
+  // `codeArg` lets callers pass the code directly to avoid stale closure reads.
+  // When called from handleOtpInput/Paste via setTimeout, React may not have
+  // re-rendered yet, so reading `otp` state here would give the old value.
+  async function handleVerifyOtp(codeArg?: string) {
+    const code = codeArg ?? otp.join('')
+    console.log('[verify] code:', code, '| phone:', phone.replace(/\D/g, ''))
+    if (code.length !== 5) { console.log('[verify] skipped — code not 5 digits'); return }
+    if (loading) { console.log('[verify] skipped — already loading'); return }
     setError('')
     setLoading(true)
     try {
+      const body = { phone: phone.replace(/\D/g, ''), code }
+      console.log('[verify] → POST /api/auth/otp/verify', body)
       const res = await fetch('/api/auth/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.replace(/\D/g, ''), code }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
+      console.log('[verify] ← status:', res.status, 'data:', data)
       if (!res.ok) {
         setError(data.error?.message ?? 'کد اشتباه است')
         setOtp(['', '', '', '', ''])
         otpRefs.current[0]?.focus()
         return
       }
+      console.log('[verify] success — saving token, redirecting')
+      // Save to localStorage for client-side auth checks (rehjoo layout)
       localStorage.setItem('mg_token', data.data.token)
-      router.push(data.data.user.role === 'rahbalad' ? '/coach-dashboard' : '/dashboard')
-    } catch {
+      // Cookie is already set by the verify API response (for middleware).
+      // Use window.location.href (full navigation) so the browser sends
+      // the fresh cookie on the next request and middleware can read it.
+      const dest = data.data.user.role === 'rahbalad' ? '/coach-dashboard' : '/dashboard'
+      window.location.href = dest
+    } catch (err) {
+      console.error('[verify] network error:', err)
       setError('خطا در اتصال به سرور')
     } finally {
       setLoading(false)
@@ -93,7 +108,8 @@ export default function LoginPage() {
     setOtp(next)
     if (digit && index < 4) otpRefs.current[index + 1]?.focus()
     if (next.every((d) => d !== '')) {
-      setTimeout(() => handleVerifyOtp(), 50)
+      // Pass next.join('') explicitly — do NOT rely on otp state here (stale closure)
+      setTimeout(() => handleVerifyOtp(next.join('')), 50)
     }
   }
 
@@ -109,7 +125,7 @@ export default function LoginPage() {
     const next = ['', '', '', '', '']
     text.split('').forEach((d, i) => { next[i] = d })
     setOtp(next)
-    if (text.length === 5) setTimeout(() => handleVerifyOtp(), 50)
+    if (text.length === 5) setTimeout(() => handleVerifyOtp(text), 50)
     else otpRefs.current[text.length]?.focus()
   }
 
@@ -261,7 +277,7 @@ export default function LoginPage() {
               )}
 
               <button
-                onClick={handleVerifyOtp}
+                onClick={() => handleVerifyOtp()}
                 disabled={loading || otp.some((d) => !d)}
                 className="w-full py-3 rounded-md text-white font-semibold text-base transition-all active:scale-95"
                 style={{
