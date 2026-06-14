@@ -5,9 +5,10 @@ const secret = new TextEncoder().encode(
 )
 
 export interface JWTPayload {
-  sub: string   // user id
-  phone: string
-  role: string
+  sub:       string    // user id
+  phone:     string
+  role:      string    // UserRole: rehjoo | rahbalad | admin (legacy — kept for coach routing)
+  adminRole?: string   // AdminRoleType: super_admin | support_manager | support_agent | undefined
   iat?: number
   exp?: number
 }

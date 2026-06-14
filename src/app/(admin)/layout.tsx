@@ -66,7 +66,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const parts   = raw.split('.')
       const decoded = JSON.parse(atob(parts[1]))
       if (Date.now() / 1000 > decoded.exp) { router.replace('/login'); return }
-      if (decoded.role !== 'admin') { router.replace('/dashboard'); return }
+      // Admin access is granted via admin_roles table (encoded in adminRole JWT claim)
+      // A user with role='rahbalad' can also have adminRole set
+      if (!decoded.adminRole) { router.replace('/login'); return }
     } catch {
       router.replace('/login')
       return

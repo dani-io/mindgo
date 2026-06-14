@@ -1,40 +1,51 @@
 /**
- * Create or promote a user to super_admin.
- * Usage: npx tsx scripts/create-admin.ts <phone>
+ * Create a new user with admin access, or grant admin access to an existing user.
+ * Does NOT change user.role — admin access is tracked separately in admin_roles table.
+ *
+ * Usage: npx tsx scripts/create-admin.ts <phone> [role]
  * Example: npx tsx scripts/create-admin.ts 09121234567
+ *          npx tsx scripts/create-admin.ts 09121234567 support_manager
+ *
+ * For granting admin access to an existing user, prefer: scripts/make-admin.ts
  */
 
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+type AdminRoleType = 'super_admin' | 'support_manager' | 'support_agent'
+const VALID_ROLES: AdminRoleType[] = ['super_admin', 'support_manager', 'support_agent']
+
 async function main() {
-  const phone = process.argv[2]
+  const phone   = process.argv[2]
+  const roleArg = (process.argv[3] ?? 'super_admin') as AdminRoleType
+
   if (!phone) {
-    console.error('Usage: npx tsx scripts/create-admin.ts <phone>')
+    console.error('Usage: npx tsx scripts/create-admin.ts <phone> [role]')
     process.exit(1)
   }
 
-  // Find or create the user
+  if (!VALID_ROLES.includes(roleArg)) {
+    console.error(`Invalid role "${roleArg}". Must be one of: ${VALID_ROLES.join(', ')}`)
+    process.exit(1)
+  }
+
+  // Find or create the user — role stays as rehjoo (default) or whatever they already have
   let user = await prisma.user.findUnique({ where: { phone } })
   if (!user) {
     user = await prisma.user.create({
-      data: { phone, role: 'admin', name: 'Super Admin' },
+      data: { phone, name: 'Admin' },
     })
     console.log(`✅ New user created: ${user.id}`)
   } else {
-    user = await prisma.user.update({
-      where: { phone },
-      data:  { role: 'admin' },
-    })
-    console.log(`✅ Existing user updated: ${user.id}`)
+    console.log(`✅ Existing user found: ${user.id} (role: ${user.role})`)
   }
 
-  // Upsert AdminRole
+  // Upsert AdminRole entry — this is the source of truth for admin access
   const adminRole = await prisma.adminRole.upsert({
     where:  { userId: user.id },
-    update: { role: 'super_admin', isActive: true },
-    create: { userId: user.id, role: 'super_admin' },
+    update: { role: roleArg, isActive: true },
+    create: { userId: user.id, role: roleArg },
   })
 
   console.log(`✅ AdminRole set to: ${adminRole.role}`)

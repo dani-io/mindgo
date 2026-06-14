@@ -51,15 +51,19 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/coach-sessions') ||
     pathname.startsWith('/coach-messages')
 
+  // Coach paths: only rahbalad role (a user can be rahbalad AND have adminRole simultaneously)
   if (isCoachPath && payload.role !== 'rahbalad') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
+  // Redirect plain rehjoo hitting /dashboard to their dashboard (rahbalad goes to coach-dashboard)
   if (pathname.startsWith('/dashboard') && payload.role === 'rahbalad') {
     return NextResponse.redirect(new URL('/coach-dashboard', req.url))
   }
 
-  if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+  // Admin paths: check adminRole JWT claim (set at login from admin_roles table)
+  // A coach (rahbalad) with an admin_roles entry can access both /coach-* AND /admin
+  if (pathname.startsWith('/admin') && !payload.adminRole) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 

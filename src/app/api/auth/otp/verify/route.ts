@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { signToken } from '@/lib/auth'
+import { getAdminRole } from '@/lib/rbac'
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\s+/g, '').replace(/^(\+98|0098)/, '0')
@@ -66,11 +67,17 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const token = await signToken({
-    sub: user.id,
+  // Check if this user also has admin access (independent of user.role)
+  const adminRole = await getAdminRole(user.id)
+
+  const tokenPayload: { sub: string; phone: string; role: string; adminRole?: string } = {
+    sub:   user.id,
     phone: user.phone,
-    role: user.role,
-  })
+    role:  user.role,
+  }
+  if (adminRole) tokenPayload.adminRole = adminRole
+
+  const token = await signToken(tokenPayload)
 
   const res = NextResponse.json({
     success: true,

@@ -48,10 +48,12 @@ export async function requireAdminAuth(
   if (!token) return { ok: false, status: 401, message: 'احراز هویت الزامی است' }
 
   const payload = await verifyToken(token)
-  if (!payload || payload.role !== 'admin') return { ok: false, status: 403, message: 'دسترسی غیرمجاز' }
+  if (!payload) return { ok: false, status: 401, message: 'احراز هویت الزامی است' }
 
+  // Admin access is determined by admin_roles table, not user.role
+  // This allows a rahbalad (coach) to also have admin access
   const adminRole = await getAdminRole(payload.sub)
-  if (!adminRole) return { ok: false, status: 403, message: 'نقش ادمین تعریف نشده' }
+  if (!adminRole) return { ok: false, status: 403, message: 'دسترسی غیرمجاز' }
 
   if (ROLE_WEIGHT[adminRole] < ROLE_WEIGHT[minRole]) {
     return { ok: false, status: 403, message: 'سطح دسترسی کافی نیست' }
