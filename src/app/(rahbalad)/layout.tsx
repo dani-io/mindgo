@@ -10,11 +10,11 @@ interface CoachInfo {
 }
 
 const NAV_ITEMS = [
-  { label: 'داشبورد', icon: '🏠', href: '/coach-dashboard' },
-  { label: 'جلسات',   icon: '📅', href: '/coach-sessions' },
-  { label: 'زمان‌بندی', icon: '⏰', href: '/coach-availability' },
-  { label: 'پکیج‌ها', icon: '📦', href: '/coach-packages' },
-  { label: 'کیف پول', icon: '💰', href: '/coach-wallet' },
+  { label: 'داشبورد',  icon: '🏠', href: '/coach-dashboard'  },
+  { label: 'جلسات',   icon: '📅', href: '/coach-sessions'   },
+  { label: 'پیام‌ها',  icon: '💬', href: '/coach-messages'  },
+  { label: 'پکیج‌ها', icon: '📦', href: '/coach-packages'  },
+  { label: 'کیف پول', icon: '💰', href: '/coach-wallet'     },
 ]
 
 export default function RahbaladLayout({ children }: { children: React.ReactNode }) {

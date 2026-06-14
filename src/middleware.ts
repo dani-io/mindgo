@@ -8,6 +8,8 @@ const PROTECTED_PREFIXES = [
   '/coach-packages',
   '/coach-wallet',
   '/coach-sessions',
+  '/coach-messages',
+  '/messages',
   '/admin',
 ]
 
@@ -40,7 +42,8 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/coach-availability') ||
     pathname.startsWith('/coach-packages') ||
     pathname.startsWith('/coach-wallet') ||
-    pathname.startsWith('/coach-sessions')
+    pathname.startsWith('/coach-sessions') ||
+    pathname.startsWith('/coach-messages')
 
   if (isCoachPath && payload.role !== 'rahbalad') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
@@ -65,6 +68,8 @@ export const config = {
     '/coach-packages/:path*',
     '/coach-wallet/:path*',
     '/coach-sessions/:path*',
+    '/coach-messages/:path*',
+    '/messages/:path*',
     '/admin/:path*',
   ],
 }
