@@ -10,6 +10,7 @@ const PROTECTED_PREFIXES = [
   '/coach-sessions',
   '/coach-messages',
   '/messages',
+  '/sessions',
   '/admin',
 ]
 
@@ -70,6 +71,7 @@ export const config = {
     '/coach-sessions/:path*',
     '/coach-messages/:path*',
     '/messages/:path*',
+    '/sessions/:path*',
     '/admin/:path*',
   ],
 }
