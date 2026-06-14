@@ -59,12 +59,17 @@ export default function AdminTicketDetailPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   async function load() {
-    const res  = await fetch(`/api/admin/tickets/${id}`)
-    const json = await res.json()
-    if (json.success) {
-      setTicket(json.data.ticket)
-      setMessages(json.data.messages)
-    }
+    try {
+      const res  = await fetch(`/api/admin/tickets/${id}`)
+      if (!res.ok) { setLoading(false); return }
+      const text = await res.text()
+      if (!text) { setLoading(false); return }
+      const json = JSON.parse(text)
+      if (json.success) {
+        setTicket(json.data.ticket)
+        setMessages(json.data.messages)
+      }
+    } catch { /* ignore */ }
     setLoading(false)
   }
 
@@ -92,15 +97,21 @@ export default function AdminTicketDetailPage() {
     }
     setMessages((prev) => [...prev, tempMsg])
 
-    const res  = await fetch(`/api/admin/tickets/${id}/reply`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ content: text }),
-    })
-    const json = await res.json()
-    if (json.success) {
-      setMessages((prev) => prev.map((m) => m.id === tempMsg.id ? { ...tempMsg, id: json.data.id } : m))
-    } else {
+    try {
+      const res  = await fetch(`/api/admin/tickets/${id}/reply`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ content: text }),
+      })
+      const raw  = await res.text()
+      const json = raw ? JSON.parse(raw) : null
+      if (res.ok && json?.success) {
+        setMessages((prev) => prev.map((m) => m.id === tempMsg.id ? { ...tempMsg, id: json.data.id } : m))
+      } else {
+        setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id))
+        setReplyText(text)
+      }
+    } catch {
       setMessages((prev) => prev.filter((m) => m.id !== tempMsg.id))
       setReplyText(text)
     }
@@ -110,13 +121,16 @@ export default function AdminTicketDetailPage() {
   async function updateStatus(newStatus: TicketStatus) {
     if (!ticket || updating) return
     setUpdating(true)
-    const res  = await fetch(`/api/admin/tickets/${id}/status`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ status: newStatus }),
-    })
-    const json = await res.json()
-    if (json.success) setTicket((t) => t ? { ...t, status: newStatus } : t)
+    try {
+      const res  = await fetch(`/api/admin/tickets/${id}/status`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status: newStatus }),
+      })
+      const raw  = await res.text()
+      const json = raw ? JSON.parse(raw) : null
+      if (res.ok && json?.success) setTicket((t) => t ? { ...t, status: newStatus } : t)
+    } catch { /* ignore */ }
     setUpdating(false)
   }
 
