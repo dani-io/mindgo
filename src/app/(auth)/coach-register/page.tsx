@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import FileUpload from '@/components/ui/FileUpload'
+import AudioRecorder from '@/components/ui/AudioRecorder'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -128,7 +130,6 @@ export default function CoachRegisterPage() {
 
   // Step 5: Voice intro
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null)
-  const audioRef = useRef<HTMLInputElement>(null)
 
   // Step 6: Submit
   const [submitting, setSubmitting] = useState(false)
@@ -441,6 +442,16 @@ export default function CoachRegisterPage() {
                   className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                   style={{ ...inputStyle, direction: 'ltr', textAlign: 'right' }}
                 />
+                <div>
+                  <p className="text-xs mb-2" style={{ color: 'var(--content-tertiary)' }}>تصویر مدرک (اختیاری)</p>
+                  <FileUpload
+                    folder="certificates"
+                    maxSize={5 * 1024 * 1024}
+                    acceptedTypes={['image/jpeg', 'image/png', 'image/webp']}
+                    onUploadComplete={(url) => setCertForm((f) => ({ ...f, fileUrl: url || null }))}
+                    label="آپلود تصویر مدرک"
+                  />
+                </div>
                 <button
                   onClick={addCert}
                   disabled={!certForm.title || !certForm.issuer || !certForm.year}
@@ -462,56 +473,46 @@ export default function CoachRegisterPage() {
         {step === 5 && (
           <StepShell
             title="معرفی صوتی"
-            subtitle="یک فایل صوتی کوتاه (حداکثر ۲ دقیقه) از خودتان آپلود کنید"
+            subtitle="یک معرفی کوتاه صوتی (حداکثر ۲ دقیقه) از خودتان ضبط یا آپلود کنید"
             onNext={() => setStep(6)}
             onBack={() => setStep(4)}
           >
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
+
+              {/* Tab: Record */}
               <div
-                className="rounded-xl p-6 flex flex-col items-center text-center"
-                style={{ background: 'var(--surface-card)', border: '2px dashed var(--border-color)' }}
+                className="rounded-xl p-5"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
               >
-                <span className="text-4xl mb-3">🎙️</span>
-                {voiceUrl ? (
-                  <>
-                    <p className="text-sm font-semibold mb-3" style={{ color: '#10B981' }}>✓ فایل صوتی بارگذاری شد</p>
-                    <audio controls className="w-full" src={voiceUrl} style={{ filter: 'invert(0)' }} />
-                    <button
-                      onClick={() => setVoiceUrl(null)}
-                      className="mt-3 text-xs"
-                      style={{ color: '#EF4444' }}
-                    >
-                      حذف فایل
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm mb-1" style={{ color: 'var(--content-secondary)' }}>
-                      فرمت‌های مجاز: MP3، M4A، WAV
-                    </p>
-                    <p className="text-xs mb-4" style={{ color: 'var(--content-tertiary)' }}>حداکثر حجم: ۱۰ مگابایت</p>
-                    <button
-                      onClick={() => audioRef.current?.click()}
-                      className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
-                      style={{ background: '#10B981' }}
-                    >
-                      انتخاب فایل صوتی
-                    </button>
-                    <input
-                      ref={audioRef}
-                      type="file"
-                      accept="audio/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          const url = URL.createObjectURL(file)
-                          setVoiceUrl(url)
-                        }
-                      }}
-                    />
-                  </>
-                )}
+                <p className="text-sm font-semibold mb-4" style={{ color: 'var(--content-primary)' }}>🎙️ ضبط مستقیم</p>
+                <AudioRecorder
+                  folder="voice-intros"
+                  maxSeconds={120}
+                  onUploadComplete={(url) => setVoiceUrl(url || null)}
+                />
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+                <span className="text-xs" style={{ color: 'var(--content-tertiary)' }}>یا</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--border-color)' }} />
+              </div>
+
+              {/* Tab: Upload file */}
+              <div
+                className="rounded-xl p-5"
+                style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
+              >
+                <p className="text-sm font-semibold mb-4" style={{ color: 'var(--content-primary)' }}>📂 آپلود فایل صوتی</p>
+                <FileUpload
+                  folder="voice-intros"
+                  maxSize={10 * 1024 * 1024}
+                  acceptedTypes={['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-m4a']}
+                  onUploadComplete={(url) => setVoiceUrl(url || null)}
+                  label="انتخاب فایل MP3 / M4A / WAV"
+                  currentUrl={voiceUrl ?? undefined}
+                />
               </div>
 
               <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>

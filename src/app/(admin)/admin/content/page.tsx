@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import FileUpload from '@/components/ui/FileUpload'
 
 type ContentType = 'podcast' | 'video' | 'book_summary'
 type ExerciseType = 'meditation' | 'breathing' | 'planning'
@@ -445,12 +446,32 @@ export default function AdminContentPage() {
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>لینک رسانه</label>
-                <input value={cMedia} onChange={(e) => setCMedia(e.target.value)} style={inputStyle} placeholder="https://..." />
+                <label style={labelStyle}>
+                  {cType === 'podcast' ? 'فایل صوتی (پادکست)' : cType === 'video' ? 'لینک ویدیو' : 'لینک رسانه'}
+                </label>
+                {cType === 'podcast' ? (
+                  <FileUpload
+                    folder="podcasts"
+                    maxSize={50 * 1024 * 1024}
+                    acceptedTypes={['audio/mpeg', 'audio/mp4', 'audio/wav']}
+                    onUploadComplete={setCMedia}
+                    label="آپلود فایل صوتی پادکست (MP3)"
+                    currentUrl={cMedia}
+                  />
+                ) : (
+                  <input value={cMedia} onChange={(e) => setCMedia(e.target.value)} style={inputStyle} placeholder="https://..." />
+                )}
               </div>
               <div>
-                <label style={labelStyle}>لینک تصویر بند انگشتی</label>
-                <input value={cThumb} onChange={(e) => setCThumb(e.target.value)} style={inputStyle} placeholder="https://..." />
+                <label style={labelStyle}>تصویر بند انگشتی</label>
+                <FileUpload
+                  folder="podcasts"
+                  maxSize={2 * 1024 * 1024}
+                  acceptedTypes={['image/jpeg', 'image/png', 'image/webp']}
+                  onUploadComplete={setCThumb}
+                  label="آپلود تصویر کاور"
+                  currentUrl={cThumb}
+                />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={cPub} onChange={(e) => setCPub(e.target.checked)} />
@@ -525,8 +546,15 @@ export default function AdminContentPage() {
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>لینک فایل صوتی</label>
-                <input value={eAudio} onChange={(e) => setEAudio(e.target.value)} style={inputStyle} placeholder="https://..." />
+                <label style={labelStyle}>فایل صوتی تمرین</label>
+                <FileUpload
+                  folder="exercises"
+                  maxSize={10 * 1024 * 1024}
+                  acceptedTypes={['audio/mpeg', 'audio/mp4', 'audio/wav']}
+                  onUploadComplete={setEAudio}
+                  label="آپلود فایل صوتی تمرین (MP3)"
+                  currentUrl={eAudio}
+                />
               </div>
               <div>
                 <label style={labelStyle}>مراحل اجرا (هر مرحله در یک خط)</label>

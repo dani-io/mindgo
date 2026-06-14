@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ThemeToggle from '@/components/layout/ThemeToggle'
+import ImageCropper from '@/components/ui/ImageCropper'
 
 interface ProfileData {
   id:          string
@@ -45,8 +46,10 @@ function parseBadges(raw: unknown): string[] {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [profile, setProfile] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [profile,       setProfile]       = useState<ProfileData | null>(null)
+  const [loading,       setLoading]       = useState(true)
+  const [showCropper,   setShowCropper]   = useState(false)
+  const [savingAvatar,  setSavingAvatar]  = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -62,6 +65,23 @@ export default function ProfilePage() {
     }
     load()
   }, [router])
+
+  async function updateAvatar(url: string) {
+    setSavingAvatar(true)
+    const token = localStorage.getItem('mg_token')
+    try {
+      const res  = await fetch('/api/profile', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body:    JSON.stringify({ avatarUrl: url }),
+      })
+      const json = await res.json()
+      if (json.success && profile) setProfile({ ...profile, avatarUrl: url })
+    } finally {
+      setSavingAvatar(false)
+      setShowCropper(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -100,9 +120,11 @@ export default function ProfilePage() {
         style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
       >
         {/* Avatar */}
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3"
+        <button
+          onClick={() => setShowCropper(true)}
+          className="relative w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3 group"
           style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981' }}
+          title="تغییر عکس پروفایل"
         >
           {profile.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +132,43 @@ export default function ProfilePage() {
           ) : (
             initials
           )}
-        </div>
+          <div
+            className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: 'rgba(0,0,0,0.45)' }}
+          >
+            <span className="text-white text-sm">📷</span>
+          </div>
+        </button>
+
+        {/* Avatar cropper modal */}
+        {showCropper && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', direction: 'rtl' }}
+            onClick={() => setShowCropper(false)}
+          >
+            <div
+              className="rounded-3xl p-6 w-full max-w-sm flex flex-col gap-4"
+              style={{ background: 'var(--surface-card)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-base" style={{ color: 'var(--content-primary)' }}>عکس پروفایل</h3>
+                <button onClick={() => setShowCropper(false)} style={{ color: 'var(--content-tertiary)' }}>✕</button>
+              </div>
+              <div className="flex justify-center">
+                <ImageCropper
+                  folder="avatars"
+                  size={220}
+                  onUploadComplete={(url) => { if (url) updateAvatar(url) }}
+                />
+              </div>
+              {savingAvatar && (
+                <p className="text-sm text-center" style={{ color: 'var(--content-secondary)' }}>در حال ذخیره...</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <p className="font-bold text-lg mb-1" style={{ color: 'var(--content-primary)' }}>
           {profile.name ?? 'رهجو'}
