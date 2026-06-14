@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import FAB from '@/components/layout/FAB'
+import NotificationBell from '@/components/layout/NotificationBell'
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -57,21 +59,26 @@ export default function RehjooLayout({ children }: { children: React.ReactNode }
       className="min-h-screen"
       style={{ background: 'var(--surface-primary)', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}
     >
-      {children}
-
-      {/* FAB — bottom-left (logical start in RTL) */}
-      <button
-        className="fixed z-50 flex items-center justify-center w-14 h-14 rounded-full text-2xl text-white transition-transform active:scale-90"
+      {/* Minimal top bar with notification bell */}
+      <header
+        className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4"
         style={{
-          left: 16,
-          bottom: 'calc(80px + env(safe-area-inset-bottom))',
-          background: '#10B981',
-          boxShadow: '0 4px 24px rgba(16,185,129,0.45)',
+          height:       48,
+          background:   'var(--surface-card)',
+          borderBottom: '1px solid var(--border-color)',
         }}
-        aria-label="پشتیبانی"
       >
-        💬
-      </button>
+        <span className="font-bold text-sm" style={{ color: '#10B981' }}>🧠 Mindgo</span>
+        <NotificationBell />
+      </header>
+
+      {/* Offset for fixed header */}
+      <div style={{ paddingTop: 48 }}>
+        {children}
+      </div>
+
+      {/* FAB — message coach / support */}
+      <FAB />
 
       {/* Bottom Navigation */}
       <nav

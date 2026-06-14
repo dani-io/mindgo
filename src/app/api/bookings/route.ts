@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import jalaali from 'jalaali-js'
+import { sendBookingConfirmed, sendBookingReceivedForCoach } from '@/lib/services/notification.service'
 
 function makeJitsiRoom(coachId: string): string {
   const rand = Math.random().toString(36).substring(2, 8)
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   // Validate package belongs to the coach
   const pkg = await prisma.package.findUnique({
     where: { id: package_id },
-    include: { coach: { select: { id: true, status: true } } },
+    include: { coach: { select: { id: true, userId: true, status: true } } },
   })
 
   if (!pkg || pkg.coachId !== coach_id || pkg.coach.status !== 'approved' || !pkg.isActive) {
@@ -69,17 +70,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const booking = await prisma.booking.create({
-    data: {
-      userId,
-      coachId: coach_id,
-      packageId: package_id,
-      sessionDate,
-      sessionTime: session_time,
-      jitsiRoomId: makeJitsiRoom(coach_id),
-      status: 'pending',
-    },
-  })
+  const [booking, clientUser] = await Promise.all([
+    prisma.booking.create({
+      data: {
+        userId,
+        coachId: coach_id,
+        packageId: package_id,
+        sessionDate,
+        sessionTime: session_time,
+        jitsiRoomId: makeJitsiRoom(coach_id),
+        status: 'pending',
+      },
+    }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+  ])
+
+  // Fire-and-forget notifications
+  Promise.all([
+    sendBookingConfirmed(userId, pkg.name),
+    sendBookingReceivedForCoach(pkg.coach.userId, clientUser?.name ?? 'کاربر', pkg.name),
+  ]).catch(() => {/* ignore notification errors */})
 
   return NextResponse.json({
     success: true,

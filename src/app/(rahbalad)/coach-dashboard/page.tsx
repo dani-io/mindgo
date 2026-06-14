@@ -195,6 +195,7 @@ export default function CoachDashboardPage() {
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([])
   const [stats,        setStats]        = useState<{ thisWeekCount: number; thisMonthEarnings: number } | null>(null)
   const [messages,     setMessages]     = useState<RecentMessage[]>([])
+  const [activeDays,   setActiveDays]   = useState<number | null>(null)
   const [loading,      setLoading]      = useState(true)
 
   useEffect(() => {
@@ -204,11 +205,18 @@ export default function CoachDashboardPage() {
     Promise.all([
       fetch('/api/coaches/me', { headers }).then((r) => r.json()),
       fetch('/api/coaches/me/sessions?filter=today', { headers }).then((r) => r.json()),
-    ]).then(([coachJson, todayJson]) => {
+      fetch('/api/coaches/me/availability', { headers }).then((r) => r.json()),
+    ]).then(([coachJson, todayJson, availJson]) => {
       if (coachJson.success) setData(coachJson.data)
       if (todayJson.success) {
         setTodaySessions(todayJson.data.sessions)
         setStats(todayJson.data.stats)
+      }
+      if (availJson.success) {
+        const days = new Set<number>((availJson.data.slots as { dayOfWeek: number }[]).map((s) => s.dayOfWeek))
+        setActiveDays(days.size)
+      } else {
+        setActiveDays(0)
       }
     }).finally(() => setLoading(false))
   }, [])
@@ -303,6 +311,33 @@ export default function CoachDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Availability quick link */}
+      <button
+        onClick={() => router.push('/coach-availability')}
+        className="w-full rounded-xl p-4 flex items-center gap-3 text-right transition-all active:scale-[0.99]"
+        style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
+      >
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+          style={{ background: 'rgba(99,102,241,0.12)' }}
+        >
+          🕐
+        </div>
+        <div className="flex-1 text-right">
+          <p className="text-sm font-semibold" style={{ color: 'var(--content-primary)' }}>
+            زمان‌بندی پذیرش
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--content-tertiary)' }}>
+            {activeDays === null
+              ? 'در حال بارگذاری...'
+              : activeDays === 0
+              ? 'هیچ روزی تنظیم نشده — تنظیم کنید'
+              : `${toPersian(activeDays)} روز در هفته فعال`}
+          </p>
+        </div>
+        <span style={{ color: 'var(--content-tertiary)' }}>›</span>
+      </button>
 
       {/* Today's sessions */}
       <section>

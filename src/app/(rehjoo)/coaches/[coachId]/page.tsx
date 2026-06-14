@@ -12,6 +12,7 @@ interface Review      { id: string; rating: number; comment: string | null; isAn
 
 interface CoachDetail {
   id:            string
+  userId:        string
   name:          string
   shortBio:      string | null
   fullBio:       string | null
@@ -504,18 +505,29 @@ export default function CoachProfilePage() {
               </span>
             </div>
           )}
-          <button
-            disabled={!selectedPkg}
-            onClick={() => router.push(`/coaches/${coach.id}/book?package=${selectedPkg}`)}
-            className="w-full py-3.5 rounded-xl text-white font-bold text-base transition-all active:scale-95"
-            style={{
-              background: selectedPkg ? '#10B981' : 'var(--surface-tertiary)',
-              color:      selectedPkg ? '#fff'     : 'var(--content-tertiary)',
-              cursor:     selectedPkg ? 'pointer'  : 'not-allowed',
-            }}
-          >
-            رزرو جلسه 🧭
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push(`/messages/${coach.userId}`)}
+              className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all active:scale-90"
+              style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-color)' }}
+              aria-label="ارسال پیام"
+              title="ارسال پیام"
+            >
+              💬
+            </button>
+            <button
+              disabled={!selectedPkg}
+              onClick={() => router.push(`/coaches/${coach.id}/book?package=${selectedPkg}`)}
+              className="flex-1 py-3.5 rounded-xl text-white font-bold text-base transition-all active:scale-95"
+              style={{
+                background: selectedPkg ? '#10B981' : 'var(--surface-tertiary)',
+                color:      selectedPkg ? '#fff'     : 'var(--content-tertiary)',
+                cursor:     selectedPkg ? 'pointer'  : 'not-allowed',
+              }}
+            >
+              رزرو جلسه 🧭
+            </button>
+          </div>
         </div>
       </div>
 

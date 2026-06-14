@@ -27,7 +27,7 @@ export default function CoachMessagesPage() {
   const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0)
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto px-4 pt-5 pb-6">
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-xl font-bold" style={{ color: 'var(--content-primary)' }}>پیام‌ها</h1>
         {totalUnread > 0 && (

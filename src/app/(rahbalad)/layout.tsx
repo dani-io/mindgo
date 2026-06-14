@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import NotificationBell from '@/components/layout/NotificationBell'
 
 interface CoachInfo {
   name: string
@@ -10,11 +11,12 @@ interface CoachInfo {
 }
 
 const NAV_ITEMS = [
-  { label: 'داشبورد',  icon: '🏠', href: '/coach-dashboard'  },
-  { label: 'جلسات',   icon: '📅', href: '/coach-sessions'   },
-  { label: 'پیام‌ها',  icon: '💬', href: '/coach-messages'  },
-  { label: 'پکیج‌ها', icon: '📦', href: '/coach-packages'  },
-  { label: 'کیف پول', icon: '💰', href: '/coach-wallet'     },
+  { label: 'داشبورد',   icon: '🏠', href: '/coach-dashboard'    },
+  { label: 'جلسات',    icon: '📅', href: '/coach-sessions'     },
+  { label: 'زمان‌بندی', icon: '🕐', href: '/coach-availability' },
+  { label: 'پیام‌ها',   icon: '💬', href: '/coach-messages'    },
+  { label: 'پکیج‌ها',  icon: '📦', href: '/coach-packages'    },
+  { label: 'کیف پول',  icon: '💰', href: '/coach-wallet'       },
 ]
 
 export default function RahbaladLayout({ children }: { children: React.ReactNode }) {
@@ -141,15 +143,21 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
         </div>
         {coach && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium" style={{ color: 'var(--content-secondary)' }}>
-              {coach.name || 'راه‌بلد'}
-            </span>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981' }}
+            <NotificationBell />
+            <button
+              onClick={() => router.push('/coach-profile')}
+              className="flex items-center gap-2 active:opacity-70"
             >
-              {(coach.name || 'ر').charAt(0)}
-            </div>
+              <span className="text-sm font-medium" style={{ color: 'var(--content-secondary)' }}>
+                {coach.name || 'راه‌بلد'}
+              </span>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981' }}
+              >
+                {(coach.name || 'ر').charAt(0)}
+              </div>
+            </button>
           </div>
         )}
       </header>

@@ -687,6 +687,9 @@ enum NotificationCategory {
   booking_confirmed
   payout
   challenge
+  streak_alert
+  new_message
+  support_reply
   system
 }
 

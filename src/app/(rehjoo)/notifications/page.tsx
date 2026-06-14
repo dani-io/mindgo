@@ -20,10 +20,13 @@ interface Grouped {
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  session_reminder: '🎙️',
+  session_reminder: '🔔',
   booking_confirmed: '✅',
   payout:           '💰',
   challenge:        '🏆',
+  streak_alert:     '🔥',
+  new_message:      '💬',
+  support_reply:    '🛟',
   system:           '🔔',
 }
 
