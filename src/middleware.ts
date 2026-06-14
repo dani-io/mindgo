@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 
-const PROTECTED_PREFIXES = ['/dashboard', '/coach-dashboard']
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/coach-dashboard',
+  '/coach-availability',
+  '/coach-packages',
+  '/coach-wallet',
+  '/coach-sessions',
+]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -27,12 +34,17 @@ export async function middleware(req: NextRequest) {
   }
   console.log(`[middleware] authed uid=${payload.sub} role=${payload.role}`)
 
-  // Role-based guard: coach dashboard only for rahbalad
-  if (pathname.startsWith('/coach-dashboard') && payload.role !== 'rahbalad') {
+  const isCoachPath =
+    pathname.startsWith('/coach-dashboard') ||
+    pathname.startsWith('/coach-availability') ||
+    pathname.startsWith('/coach-packages') ||
+    pathname.startsWith('/coach-wallet') ||
+    pathname.startsWith('/coach-sessions')
+
+  if (isCoachPath && payload.role !== 'rahbalad') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
-  // Rehjoo dashboard only for rehjoo
   if (pathname.startsWith('/dashboard') && payload.role === 'rahbalad') {
     return NextResponse.redirect(new URL('/coach-dashboard', req.url))
   }
@@ -41,5 +53,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/coach-dashboard/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/coach-dashboard/:path*',
+    '/coach-availability/:path*',
+    '/coach-packages/:path*',
+    '/coach-wallet/:path*',
+    '/coach-sessions/:path*',
+  ],
 }
