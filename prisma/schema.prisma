@@ -58,6 +58,8 @@ model User {
   supportTickets       SupportTicket[]        @relation("ticketUser")
   assignedTickets      SupportTicket[]        @relation("ticketAgent")
   notifications        Notification[]
+  wheelAssessments     WheelOfLife[]
+  badges               Json                   @default("[]")
 
   @@map("users")
 }
@@ -575,6 +577,7 @@ model ChallengeParticipant {
 
   user      User      @relation(fields: [userId], references: [id])
   challenge Challenge @relation(fields: [challengeId], references: [id])
+  checkins  ChallengeCheckin[]
 
   @@unique([userId, challengeId])
   @@map("challenge_participants")
@@ -697,4 +700,37 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+// ═══════════════════════════════════════
+// 10. Wheel of Life & Challenge Checkins
+// ═══════════════════════════════════════
+
+model WheelOfLife {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  health    Int
+  finance   Int
+  career    Int
+  skills    Int
+  relations Int
+  mind      Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("wheel_of_life")
+}
+
+model ChallengeCheckin {
+  id            String   @id @default(uuid())
+  participantId String   @map("participant_id")
+  checkinDate   DateTime @map("checkin_date") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  participant ChallengeParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, checkinDate])
+  @@map("challenge_checkins")
 }

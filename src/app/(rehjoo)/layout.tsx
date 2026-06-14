@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/growth-room', icon: '🌱', label: 'اتاق رشد'  },
   { href: '/coaches',     icon: '🧭', label: 'راه‌بلدها' },
   { href: '/tribe',       icon: '👥', label: 'قبیله'      },
+  { href: '/profile',     icon: '👤', label: 'پروفایل'    },
 ]
 
 export default function RehjooLayout({ children }: { children: React.ReactNode }) {
