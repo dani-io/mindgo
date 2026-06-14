@@ -60,6 +60,10 @@ model User {
   notifications        Notification[]
   wheelAssessments     WheelOfLife[]
   badges               Json                   @default("[]")
+  contentBookmarks     ContentBookmark[]
+  partnerships1        Partnership[]           @relation("partner1")
+  partnerships2        Partnership[]           @relation("partner2")
+  partnerCheckins      PartnerCheckin[]
 
   @@map("users")
 }
@@ -733,4 +737,118 @@ model ChallengeCheckin {
 
   @@unique([participantId, checkinDate])
   @@map("challenge_checkins")
+}
+
+// ═══════════════════════════════════════
+// 11. Content (Micro-learning)
+// ═══════════════════════════════════════
+
+enum ContentType {
+  podcast
+  video
+  book_summary
+}
+
+model Content {
+  id              String      @id @default(uuid())
+  title           String      @db.VarChar(200)
+  description     String?
+  type            ContentType
+  durationMinutes Int         @map("duration_minutes")
+  category        String      @db.VarChar(50)
+  thumbnailUrl    String?     @map("thumbnail_url")
+  mediaUrl        String?     @map("media_url")
+  author          String?     @db.VarChar(100)
+  isPublished     Boolean     @default(false) @map("is_published")
+  viewCount       Int         @default(0) @map("view_count")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  bookmarks ContentBookmark[]
+
+  @@index([type, isPublished])
+  @@map("contents")
+}
+
+model ContentBookmark {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  contentId String   @map("content_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@map("content_bookmarks")
+}
+
+// ═══════════════════════════════════════
+// 12. Exercises (کتابخانه تمرینات)
+// ═══════════════════════════════════════
+
+enum ExerciseType {
+  meditation
+  breathing
+  planning
+}
+
+enum ExerciseDifficulty {
+  beginner
+  intermediate
+  advanced
+}
+
+model Exercise {
+  id              String             @id @default(uuid())
+  title           String             @db.VarChar(200)
+  description     String?
+  type            ExerciseType
+  durationMinutes Int                @map("duration_minutes")
+  difficulty      ExerciseDifficulty @default(beginner)
+  audioUrl        String?            @map("audio_url")
+  steps           Json               @default("[]")
+  isPublished     Boolean            @default(false) @map("is_published")
+  createdAt       DateTime           @default(now()) @map("created_at")
+
+  @@index([type, isPublished])
+  @@map("exercises")
+}
+
+// ═══════════════════════════════════════
+// 13. Accountability Partners
+// ═══════════════════════════════════════
+
+enum PartnershipStatus {
+  pending
+  active
+  ended
+}
+
+model Partnership {
+  id         String            @id @default(uuid())
+  user1Id    String            @map("user1_id")
+  user2Id    String            @map("user2_id")
+  sharedGoal String?           @map("shared_goal") @db.VarChar(200)
+  status     PartnershipStatus @default(pending)
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  user1    User             @relation("partner1", fields: [user1Id], references: [id])
+  user2    User             @relation("partner2", fields: [user2Id], references: [id])
+  checkins PartnerCheckin[]
+
+  @@map("partnerships")
+}
+
+model PartnerCheckin {
+  id            String   @id @default(uuid())
+  partnershipId String   @map("partnership_id")
+  userId        String   @map("user_id")
+  checkinDate   DateTime @map("checkin_date") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  partnership Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@unique([partnershipId, userId, checkinDate])
+  @@map("partner_checkins")
 }

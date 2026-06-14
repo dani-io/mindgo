@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 // ── Types ────────────────────────────────────────────────
 
@@ -100,6 +101,27 @@ export default function TribePage() {
       </div>
 
       {tab === 'challenges' ? <ChallengesTab /> : <InspirationWall />}
+
+      {/* Partners shortcut */}
+      <div className="px-4 pt-4 pb-2">
+        <Link
+          href="/tribe/partners"
+          className="flex items-center gap-4 rounded-2xl p-4"
+          style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
+        >
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: 'rgba(16,185,129,0.1)' }}
+          >
+            🤝
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm" style={{ color: 'var(--content-primary)' }}>پارتنر پاسخگویی</p>
+            <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>یک هم‌مسیر برای تعهد مشترک پیدا کن</p>
+          </div>
+          <span style={{ color: 'var(--content-tertiary)' }}>›</span>
+        </Link>
+      </div>
     </div>
   )
 }

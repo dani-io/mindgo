@@ -15,6 +15,7 @@ const PROTECTED_PREFIXES = [
   '/tribe',
   '/profile',
   '/settings',
+  '/notifications',
   '/admin',
 ]
 
@@ -80,6 +81,7 @@ export const config = {
     '/tribe/:path*',
     '/profile/:path*',
     '/settings/:path*',
+    '/notifications/:path*',
     '/admin/:path*',
   ],
 }

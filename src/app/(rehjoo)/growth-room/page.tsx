@@ -36,6 +36,22 @@ const SECTIONS = [
     color:   '#8B5CF6',
     bg:      'rgba(139,92,246,0.1)',
   },
+  {
+    href:    '/growth-room/learn',
+    icon:    '📖',
+    title:   'دوز آگاهی',
+    desc:    'پادکست، ویدیو و خلاصه کتاب روزانه',
+    color:   '#EF4444',
+    bg:      'rgba(239,68,68,0.1)',
+  },
+  {
+    href:    '/growth-room/exercises',
+    icon:    '🌿',
+    title:   'کتابخانه تمرینات',
+    desc:    'مدیتیشن هدایت‌شده، تنفس، برنامه‌ریزی',
+    color:   '#10B981',
+    bg:      'rgba(16,185,129,0.1)',
+  },
 ]
 
 export default function GrowthRoomPage() {

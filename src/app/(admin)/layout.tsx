@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'اتاق داوری',         icon: '⚖️', href: '/admin/disputes',          minRole: 'support_manager' },
   { label: 'تیکت‌های پشتیبانی', icon: '🎫', href: '/admin/tickets',           minRole: 'support_agent'  },
   { label: 'مدیریت قبیله',       icon: '🌿', href: '/admin/tribe',             minRole: 'support_agent'  },
+  { label: 'مدیریت محتوا',       icon: '📖', href: '/admin/content',           minRole: 'support_manager' },
   { label: 'کارمندان (RBAC)',    icon: '🔐', href: '/admin/staff',             minRole: 'super_admin'    },
   { label: 'تنظیمات',            icon: '⚙️', href: '/admin/settings',          minRole: 'super_admin'    },
 ]
