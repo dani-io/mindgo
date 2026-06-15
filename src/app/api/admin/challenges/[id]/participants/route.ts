@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     success: true,
     data: {
       challenge,
-      participants: participants.map((p, i) => ({
+      participants: participants.map((p: any, i: number) => ({
         rank:         i + 1,
         id:           p.id,
         currentStreak:p.currentStreak,
