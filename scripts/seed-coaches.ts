@@ -168,7 +168,7 @@ async function main() {
     })
   }
   const allSpecs = await prisma.specialization.findMany()
-  const specBySlug = Object.fromEntries(allSpecs.map((s) => [s.slug, s.id]))
+  const specBySlug = Object.fromEntries(allSpecs.map((s: { slug: string; id: string }) => [s.slug, s.id]))
   console.log(`✓ ${SPECS.length} specializations`)
 
   // 2. Review users (fake rehjoos)

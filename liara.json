@@ -1,0 +1,14 @@
+{
+  "platform": "node",
+  "app": "mindgo",
+  "port": 3000,
+  "node": {
+    "version": "18"
+  },
+  "build": {
+    "command": "npx prisma generate && npm run build"
+  },
+  "start": {
+    "command": "npm start"
+  }
+}
