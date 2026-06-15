@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(0)
+  const [testCode, setTestCode] = useState<string | null>(null)
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
   const phoneRef = useRef<HTMLInputElement>(null)
@@ -52,6 +53,15 @@ export default function LoginPage() {
       }
       setStep('otp')
       setCountdown(data.data.expires_in ?? 120)
+      if (data.code) {
+        setTestCode(data.code)
+        const digits = String(data.code).split('').slice(0, 5)
+        const filled = ['', '', '', '', ''].map((_, i) => digits[i] ?? '')
+        setOtp(filled)
+        if (filled.every((d) => d !== '')) {
+          setTimeout(() => handleVerifyOtp(filled.join('')), 300)
+        }
+      }
     } catch {
       setError('خطا در اتصال به سرور')
     } finally {
@@ -236,6 +246,18 @@ export default function LoginPage() {
                   {phone}
                 </span>
               </p>
+
+              {testCode && (
+                <div
+                  className="rounded-md px-4 py-2 text-sm text-center mb-4"
+                  style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D' }}
+                >
+                  حالت آزمایشی — کد تأیید:{' '}
+                  <span dir="ltr" style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                    {testCode}
+                  </span>
+                </div>
+              )}
 
               {/* OTP boxes */}
               <div

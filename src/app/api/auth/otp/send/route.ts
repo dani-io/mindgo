@@ -69,9 +69,16 @@ export async function POST(req: NextRequest) {
   // TODO: replace with Kavenegar SDK once API key is configured
   console.log(`[OTP] phone=${phone} code=${code} expires=${expiresAt.toISOString()}`)
 
+  const testPhones = (process.env.TEST_PHONES ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+  const isTestMode = process.env.NODE_ENV !== 'production' || testPhones.includes(phone)
+
   return NextResponse.json({
     success: true,
     data: { expires_in: OTP_TTL_SECONDS },
     message: 'کد تأیید ارسال شد',
+    ...(isTestMode ? { code } : {}),
   })
 }
