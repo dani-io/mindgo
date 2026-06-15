@@ -855,3 +855,15 @@ model PartnerCheckin {
   @@unique([partnershipId, userId, checkinDate])
   @@map("partner_checkins")
 }
+
+// ═══════════════════════════════════════
+// 14. Platform Settings
+// ═══════════════════════════════════════
+
+model PlatformSettings {
+  id        String   @id @default("singleton")
+  config    Json     @default("{}")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
