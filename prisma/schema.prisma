@@ -714,15 +714,24 @@ model Notification {
 // ═══════════════════════════════════════
 
 model WheelOfLife {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  health    Int
-  finance   Int
-  career    Int
-  skills    Int
-  relations Int
-  mind      Int
-  createdAt DateTime @default(now()) @map("created_at")
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  // Legacy 6-dimension scores (kept for old records)
+  health         Int      @default(0)
+  finance        Int      @default(0)
+  career         Int      @default(0)
+  skills         Int      @default(0)
+  relations      Int      @default(0)
+  mind           Int      @default(0)
+  // New 8-dimension scores (0–10)
+  physical       Int      @default(0)
+  leisure        Int      @default(0)
+  love           Int      @default(0)
+  spiritual      Int      @default(0)
+  mental         Int      @default(0)
+  maritalStatus  String?  @map("marital_status")
+  answers        Json?
+  createdAt      DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
