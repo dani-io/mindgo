@@ -380,7 +380,7 @@ export default function WheelPage() {
             ›
           </button>
           <div>
-            <h1 className="text-xl font-bold">🕸️ چرخ حیات</h1>
+            <h1 className="text-xl font-bold">🕸️ چرخ زندگی</h1>
             <p className="text-xs" style={{ color: '#94A3B8' }}>میانگین: {toPersian(avg)} از ۱۰</p>
           </div>
         </div>
@@ -440,7 +440,7 @@ export default function WheelPage() {
   const progressPct = ((step) / 8) * 100
 
   return (
-    <div dir="rtl" className="max-w-lg mx-auto px-4 pt-5 pb-32 min-h-screen" style={{ background: '#0F172A', color: '#F8FAFC' }}>
+    <div dir="rtl" className="max-w-lg mx-auto px-4 pt-5 pb-52 min-h-screen" style={{ background: '#0F172A', color: '#F8FAFC' }}>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
@@ -448,7 +448,7 @@ export default function WheelPage() {
           <button onClick={() => router.back()} className="w-9 h-9 rounded-full flex items-center justify-center text-xl" style={{ background: '#1E293B' }}>
             ›
           </button>
-          <h1 className="text-base font-bold">🕸️ چرخ حیات</h1>
+          <h1 className="text-base font-bold">🕸️ چرخ زندگی</h1>
         </div>
         <button
           onClick={saveDraft}
@@ -568,7 +568,7 @@ export default function WheelPage() {
 
       {/* Sticky nav */}
       <div
-        className="fixed bottom-0 right-0 left-0 px-4 py-4 max-w-lg mx-auto"
+        className="fixed bottom-20 right-0 left-0 px-4 py-4 max-w-lg mx-auto"
         style={{ background: 'linear-gradient(to top, #0F172A 70%, transparent)' }}
       >
         {/* Submit on last dim */}

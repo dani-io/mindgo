@@ -31,7 +31,7 @@ const SECTIONS = [
   {
     href:    '/growth-room/wheel',
     icon:    '🕸️',
-    title:   'چرخ حیات',
+    title:   'چرخ زندگی',
     desc:    'ارزیابی ابعاد مختلف زندگی',
     color:   '#8B5CF6',
     bg:      'rgba(139,92,246,0.1)',
