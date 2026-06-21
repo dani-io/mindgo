@@ -186,7 +186,7 @@ export default function CoachProfilePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen" style={{ color: 'var(--content-secondary)' }}>
         <p className="text-4xl mb-3">🧭</p>
-        <p>راه‌بلد یافت نشد</p>
+        <p>کوچ یافت نشد</p>
         <button onClick={() => router.back()} className="mt-4 text-sm" style={{ color: '#10B981' }}>بازگشت</button>
       </div>
     )
@@ -207,7 +207,7 @@ export default function CoachProfilePage() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10 4l4 4-4 4M3 8h11" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          راه‌بلدها
+          کوچ‌ها
         </button>
       </div>
 
@@ -288,7 +288,7 @@ export default function CoachProfilePage() {
       {/* ── Voice Intro ── */}
       <section className="px-4 mb-6">
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--content-secondary)' }}>
-          🎧 صدای راه‌بلد
+          🎧 صدای کوچ
         </h2>
         <div
           className="rounded-xl p-4"

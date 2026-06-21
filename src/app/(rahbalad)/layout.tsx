@@ -138,7 +138,7 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
         <div className="flex items-center gap-2">
           <span className="font-bold text-base" style={{ color: '#10B981' }}>🧠 Mindgo</span>
           <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981' }}>
-            راه‌بلد
+            کوچ
           </span>
         </div>
         {coach && (
@@ -149,7 +149,7 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
               className="flex items-center gap-2 active:opacity-70"
             >
               <span className="text-sm font-medium" style={{ color: 'var(--content-secondary)' }}>
-                {coach.name || 'راه‌بلد'}
+                {coach.name || 'کوچ'}
               </span>
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"

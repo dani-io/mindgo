@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 
   if (!coach) {
     return NextResponse.json(
-      { success: false, error: { code: 'NOT_FOUND', message: 'پروفایل راه‌بلد یافت نشد' } },
+      { success: false, error: { code: 'NOT_FOUND', message: 'پروفایل کوچ یافت نشد' } },
       { status: 404 }
     )
   }

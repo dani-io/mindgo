@@ -82,13 +82,13 @@ export default function FAB() {
             <div className="flex-1 text-right">
               {hasCoach ? (
                 <>
-                  <p style={{ color: 'var(--content-primary)' }}>پیام به راه‌بلد</p>
+                  <p style={{ color: 'var(--content-primary)' }}>پیام به کوچ</p>
                   <p className="text-[10px] font-normal mt-0.5" style={{ color: '#10B981' }}>
                     {(activeCoach as ActiveCoach).name}
                   </p>
                 </>
               ) : (
-                <p>ابتدا یک راه‌بلد انتخاب کنید ›</p>
+                <p>ابتدا یک کوچ انتخاب کنید ›</p>
               )}
             </div>
           </button>

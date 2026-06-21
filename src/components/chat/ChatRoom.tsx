@@ -45,8 +45,9 @@ export default function ChatRoom({ otherUserId, backHref }: ChatRoomProps) {
   const latestIdRef  = useRef<string | null>(null)
 
   // Auto-scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // instant=true for initial load (smooth doesn't fire reliably before first paint)
+  const scrollToBottom = useCallback((instant = false) => {
+    bottomRef.current?.scrollIntoView({ behavior: instant ? 'instant' : 'smooth' })
   }, [])
 
   // Load messages (full reload or incremental)
@@ -84,7 +85,8 @@ export default function ChatRoom({ otherUserId, backHref }: ChatRoomProps) {
   useEffect(() => {
     loadMessages().then(() => {
       markRead()
-      setTimeout(scrollToBottom, 80)
+      // Use requestAnimationFrame so the DOM is painted before scrolling
+      requestAnimationFrame(() => scrollToBottom(true))
     })
 
     // Poll every 3 seconds
@@ -98,10 +100,10 @@ export default function ChatRoom({ otherUserId, backHref }: ChatRoomProps) {
     }
   }, [loadMessages, markRead, scrollToBottom])
 
-  // Scroll to bottom when messages change
+  // Smooth-scroll to bottom when new messages arrive after initial load
   useEffect(() => {
     if (!loading) scrollToBottom()
-  }, [messages, loading, scrollToBottom])
+  }, [messages]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function sendMessage() {
     const content = text.trim()

@@ -71,7 +71,7 @@ export default function AdminDashboardPage() {
       {/* Main stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="کل کاربران"      value={fmt(data.totalUsers)}    icon="👥" color="#3B82F6" />
-        <StatCard label="راه‌بلدهای فعال" value={fmt(data.activeCoaches)} icon="🧑‍💼" color="#10B981" />
+        <StatCard label="کوچ‌های فعال" value={fmt(data.activeCoaches)} icon="🧑‍💼" color="#10B981" />
         <StatCard label="جلسات برگزار شده" value={fmt(data.totalSessions)} icon="🎯" color="#8B5CF6" />
         <StatCard
           label="درآمد پلتفرم این ماه"
@@ -88,7 +88,7 @@ export default function AdminDashboardPage() {
           value={data.pendingCoaches}
           icon="⏳"
           color={data.pendingCoaches > 0 ? '#F59E0B' : 'var(--content-tertiary)'}
-          subtitle="راه‌بلد جدید"
+          subtitle="کوچ جدید"
         />
         <StatCard
           label="اختلافات باز"
@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-3">
             {[
               { label: 'کل کاربران',       value: data.totalUsers,    color: '#3B82F6' },
-              { label: 'راه‌بلدهای فعال', value: data.activeCoaches, color: '#10B981' },
+              { label: 'کوچ‌های فعال', value: data.activeCoaches, color: '#10B981' },
               { label: 'جلسات کامل شده',  value: data.totalSessions, color: '#8B5CF6' },
             ].map((row) => {
               const max = data.totalUsers || 1

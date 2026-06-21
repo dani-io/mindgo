@@ -79,5 +79,5 @@ export async function POST(
     })
   })
 
-  return Response.json({ success: true, message: 'جلسه تأیید شد و سهم راه‌بلد آزاد شد' })
+  return Response.json({ success: true, message: 'جلسه تأیید شد و سهم کوچ آزاد شد' })
 }

@@ -215,7 +215,7 @@ export default function HabitsPage() {
                     </p>
                     {habit.assignedBy && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded" style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
-                        🧭 از راه‌بلد
+                        🧭 از کوچ
                       </span>
                     )}
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: 'var(--surface-secondary)', color: 'var(--content-tertiary)' }}>

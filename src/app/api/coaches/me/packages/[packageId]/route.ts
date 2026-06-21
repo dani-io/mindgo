@@ -24,7 +24,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { name, description, session_count, duration_minutes, price_toman, includes_chat, is_intro } = body
+  const { name, description, session_count, duration_minutes, price_toman, includes_chat, is_intro, is_active } = body
 
   const updates: Record<string, unknown> = {}
   if (name              !== undefined) updates.name            = name
@@ -34,6 +34,7 @@ export async function PATCH(
   if (price_toman       !== undefined) updates.priceToman      = Number(price_toman)
   if (includes_chat     !== undefined) updates.includesChat    = includes_chat
   if (is_intro          !== undefined) updates.isIntro         = is_intro
+  if (is_active         !== undefined) updates.isActive        = Boolean(is_active)
 
   const updated = await prisma.package.update({ where: { id: params.packageId }, data: updates })
 
@@ -52,10 +53,16 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'پکیج یافت نشد' } }, { status: 404 })
   }
 
-  await prisma.package.update({
-    where: { id: params.packageId },
-    data:  { isActive: false },
-  })
+  // Block hard-delete if active bookings reference this package
+  const bookingCount = await prisma.booking.count({ where: { packageId: params.packageId } })
+  if (bookingCount > 0) {
+    return NextResponse.json({
+      success: false,
+      error: { message: 'این پکیج دارای رزرو است. برای حذف ابتدا پکیج را غیرفعال کنید.' },
+    }, { status: 409 })
+  }
 
-  return NextResponse.json({ success: true, message: 'پکیج غیرفعال شد' })
+  await prisma.package.delete({ where: { id: params.packageId } })
+
+  return NextResponse.json({ success: true, message: 'پکیج حذف شد' })
 }

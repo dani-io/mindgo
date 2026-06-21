@@ -49,7 +49,7 @@ export async function GET(
 
   if (!coach || coach.status !== 'approved') {
     return NextResponse.json(
-      { success: false, error: { code: 'NOT_FOUND', message: 'راه‌بلد یافت نشد' } },
+      { success: false, error: { code: 'NOT_FOUND', message: 'کوچ یافت نشد' } },
       { status: 404 }
     )
   }

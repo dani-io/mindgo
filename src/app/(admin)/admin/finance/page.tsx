@@ -108,7 +108,7 @@ export default function AdminFinancePage() {
               color="#3B82F6"
             />
             <MetricCard
-              label="سهم راه‌بلدها"
+              label="سهم کوچ‌ها"
               value={`${fmt(overview.totalCoachShare)} ت`}
               icon="🧑‍💼"
               color="#8B5CF6"
@@ -192,14 +192,14 @@ export default function AdminFinancePage() {
       >
         <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--content-primary)' }}>
-            💼 کیف پول راه‌بلدها ({wallets.length})
+            💼 کیف پول کوچ‌ها ({wallets.length})
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--surface-secondary)' }}>
-                {['راه‌بلد', 'کل درآمد', 'قفل شده', 'قابل برداشت', 'شبا'].map((h) => (
+                {['کوچ', 'کل درآمد', 'قفل شده', 'قابل برداشت', 'شبا'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-right text-xs font-semibold"

@@ -96,7 +96,7 @@ const DIMENSIONS = [
   {
     key: 'love', label: 'مسائل عشقی', short: 'عشقی', icon: '❤️',
     scale: STD, maxPerQ: 5,
-    questions: [], // set dynamically based on maritalStatus
+    questions: [], // loaded dynamically based on maritalStatus
   },
   {
     key: 'spiritual', label: 'مسائل معنوی', short: 'معنوی', icon: '🙏',
@@ -158,14 +158,26 @@ const DRAFT_KEY = 'wol_wizard_v2'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type DimKey = typeof DIMENSIONS[number]['key']
 type MaritalStatus = 'مجرد' | 'متأهل'
 type AnswerMap = Record<string, (number | null)[]>
 
-interface PrevAssessment {
-  physical: number; relations: number; career: number; finance: number
-  leisure: number;  love: number;      spiritual: number; mental: number
+// Scores from the DB (8 new-format dimensions, 0-10)
+interface SavedAssessment {
+  id: string
+  physical: number
+  relations: number
+  career: number
+  finance: number
+  leisure: number
+  love: number
+  spiritual: number
+  mental: number
+  maritalStatus: string | null
+  answers: unknown
+  createdAt: string
 }
+
+type ScoreMap = Record<string, number>
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -192,25 +204,53 @@ function initAnswers(): AnswerMap {
   return map
 }
 
+// A new-format assessment has answers stored as JSON (null means old slider format)
+function isNewFormat(a: SavedAssessment) {
+  return a.answers !== null && a.physical > 0
+}
+
+function scoresFromSaved(a: SavedAssessment): ScoreMap {
+  return {
+    physical:  a.physical,
+    relations: a.relations,
+    career:    a.career,
+    finance:   a.finance,
+    leisure:   a.leisure,
+    love:      a.love,
+    spiritual: a.spiritual,
+    mental:    a.mental,
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function WheelPage() {
   const router = useRouter()
 
-  const [step,          setStep]          = useState(0)          // 0-7 = dims, 8 = results
+  // Wizard state
+  const [step,          setStep]          = useState(0)
   const [answers,       setAnswers]       = useState<AnswerMap>(initAnswers)
   const [marital,       setMarital]       = useState<MaritalStatus | null>(null)
   const [lovePhase,     setLovePhase]     = useState<'select' | 'questions'>('select')
   const [saving,        setSaving]        = useState(false)
+  const [saveError,     setSaveError]     = useState<string | null>(null)
   const [draftSaved,    setDraftSaved]    = useState(false)
-  const [prevData,      setPrevData]      = useState<PrevAssessment | null>(null)
   const [transitioning, setTransitioning] = useState(false)
+
+  // DB-loaded assessments (null = not yet loaded; undefined = loaded, none found)
+  const [loadedCurrent, setLoadedCurrent] = useState<SavedAssessment | null | undefined>(undefined)
+  const [loadedPrev,    setLoadedPrev]    = useState<SavedAssessment | null>(null)
+  const [apiLoading,    setApiLoading]    = useState(true)
 
   const questionRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Load draft + previous assessment
+  // ─── On mount: restore draft OR load completed assessment from DB ──────────
   useEffect(() => {
+    const token = localStorage.getItem('mg_token')
+
+    // Check for in-progress draft first
     const raw = localStorage.getItem(DRAFT_KEY)
+    let hasDraft = false
     if (raw) {
       try {
         const draft = JSON.parse(raw)
@@ -218,30 +258,53 @@ export default function WheelPage() {
         if (draft.marital)   setMarital(draft.marital)
         if (draft.lovePhase) setLovePhase(draft.lovePhase)
         if (typeof draft.step === 'number') setStep(draft.step)
-      } catch { /* ignore */ }
+        hasDraft = true
+        console.log('[WheelOfLife] Restored draft from localStorage, step:', draft.step)
+      } catch {
+        localStorage.removeItem(DRAFT_KEY)
+      }
     }
 
-    const token = localStorage.getItem('mg_token')
+    // Always fetch from DB to get previous assessment for comparison
+    console.log('[WheelOfLife] Fetching assessments from API...')
     fetch('/api/wheel-of-life', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((j) => {
-        if (j.success && j.data.history?.length > 1) {
-          const prev = j.data.history[1]
-          // Only use prev if it has new-format fields
-          if (prev.physical || prev.relations || prev.leisure) {
-            setPrevData(prev)
-          }
+        console.log('[WheelOfLife] API response:', j)
+        if (!j.success) { setApiLoading(false); return }
+
+        const history: SavedAssessment[] = j.data.history ?? []
+        const current = history[0] ?? null
+
+        console.log('[WheelOfLife] history count:', history.length, '| current:', current?.id, '| new-format:', current ? isNewFormat(current) : false)
+
+        // Find the most recent new-format assessment to show as "current"
+        const latestNew = history.find(isNewFormat) ?? null
+        // Find one before that for comparison
+        const prevNew   = history.filter(isNewFormat)[1] ?? null
+
+        setLoadedCurrent(latestNew)
+        setLoadedPrev(prevNew)
+
+        // If no draft in progress, jump straight to results when a saved assessment exists
+        if (!hasDraft && latestNew) {
+          console.log('[WheelOfLife] Found saved assessment, jumping to results page')
+          setStep(8)
         }
+
+        setApiLoading(false)
       })
-      .catch(() => {})
-  }, [])
+      .catch((err) => {
+        console.error('[WheelOfLife] API fetch error:', err)
+        setApiLoading(false)
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Derived ──────────────────────────────────────────────────────────────
 
-  const isLoveStep = step === LOVE_IDX
-  const dim = DIMENSIONS[step] as typeof DIMENSIONS[number] | undefined
-
-  const loveConfig = marital ? getLoveConfig(marital) : null
+  const isLoveStep   = step === LOVE_IDX
+  const dim          = DIMENSIONS[step] as typeof DIMENSIONS[number] | undefined
+  const loveConfig   = marital ? getLoveConfig(marital) : null
 
   const currentQuestions: readonly string[] =
     isLoveStep && lovePhase === 'questions' && loveConfig
@@ -253,31 +316,25 @@ export default function WheelPage() {
       ? loveConfig.scale
       : (dim ? [...dim.scale] : STD)
 
-  const currentMaxPerQ: number =
-    isLoveStep && lovePhase === 'questions' && loveConfig
-      ? loveConfig.maxPerQ
-      : 5
-
   const currentAnswers = answers[dim?.key ?? ''] ?? []
 
   const stepComplete: boolean = (() => {
     if (step >= 8) return true
     if (isLoveStep) {
       if (lovePhase === 'select') return false
-      return currentAnswers.every((a) => a !== null) && currentAnswers.length === currentQuestions.length
+      return currentAnswers.length === currentQuestions.length && currentAnswers.every((a) => a !== null)
     }
     return currentAnswers.length > 0 && currentAnswers.every((a) => a !== null)
   })()
 
-  const scores = (() => {
-    const map: Record<string, number> = {}
+  // Scores computed from in-progress wizard answers
+  const wizardScores: ScoreMap = (() => {
+    const map: ScoreMap = {}
     for (const d of DIMENSIONS) {
       if (d.key === 'love') {
-        if (marital && loveConfig) {
-          map.love = calcScore(answers.love, loveConfig.questions.length, loveConfig.maxPerQ)
-        } else {
-          map.love = 0
-        }
+        map.love = (marital && loveConfig)
+          ? calcScore(answers.love, loveConfig.questions.length, loveConfig.maxPerQ)
+          : 0
       } else {
         map[d.key] = calcScore(answers[d.key], d.questions.length, d.maxPerQ)
       }
@@ -295,7 +352,6 @@ export default function WheelPage() {
       arr[qIdx] = val
       return { ...prev, [key]: arr }
     })
-    // Auto-scroll to next question
     const next = questionRefs.current[qIdx + 1]
     if (next) setTimeout(() => next.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
   }
@@ -309,7 +365,6 @@ export default function WheelPage() {
 
   function goNext() {
     if (!stepComplete) return
-    if (isLoveStep && lovePhase === 'select') { setLovePhase('questions'); return }
     transition(() => {
       setStep((s) => s + 1)
       questionRefs.current = []
@@ -338,70 +393,156 @@ export default function WheelPage() {
     setTimeout(() => setDraftSaved(false), 2000)
   }
 
+  function startRetake() {
+    setStep(0)
+    setAnswers(initAnswers())
+    setMarital(null)
+    setLovePhase('select')
+    setSaveError(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   async function handleSubmit() {
     setSaving(true)
+    setSaveError(null)
+
+    const body = {
+      ...wizardScores,
+      maritalStatus: marital,
+      answers,
+    }
+
+    console.log('[WheelOfLife] Submitting assessment:', JSON.stringify(body, null, 2))
+
     try {
       const token = localStorage.getItem('mg_token')
-      const body = {
-        ...scores,
-        maritalStatus: marital,
-        answers,
-      }
-      const res  = await fetch('/api/wheel-of-life', {
+      const res   = await fetch('/api/wheel-of-life', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body:    JSON.stringify(body),
       })
       const json = await res.json()
-      if (json.success) {
-        localStorage.removeItem(DRAFT_KEY)
-        transition(() => setStep(8))
+
+      console.log('[WheelOfLife] Save response (status', res.status, '):', json)
+
+      if (!res.ok || !json.success) {
+        const msg = json.error?.message ?? `HTTP ${res.status}`
+        console.error('[WheelOfLife] Save failed:', msg)
+        setSaveError(msg)
+        return
       }
+
+      // Success: update loaded state so the results page uses fresh DB data
+      const saved = json.data as SavedAssessment
+      console.log('[WheelOfLife] Saved successfully, id:', saved.id)
+      setLoadedPrev(loadedCurrent ?? null)   // previous becomes the one before this
+      setLoadedCurrent(saved)
+      localStorage.removeItem(DRAFT_KEY)
+      transition(() => setStep(8))
+    } catch (err) {
+      console.error('[WheelOfLife] Network error:', err)
+      setSaveError('خطای شبکه — لطفاً دوباره امتحان کنید')
     } finally {
       setSaving(false)
     }
   }
 
+  // ─── Loading skeleton ─────────────────────────────────────────────────────
+
+  if (apiLoading) {
+    return (
+      <div dir="rtl" className="max-w-lg mx-auto px-4 pt-6 min-h-screen" style={{ background: '#0F172A' }}>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-9 h-9 rounded-full animate-pulse" style={{ background: '#1E293B' }} />
+          <div className="h-5 w-32 rounded animate-pulse" style={{ background: '#1E293B' }} />
+        </div>
+        <div className="rounded-2xl h-72 animate-pulse" style={{ background: '#1E293B' }} />
+      </div>
+    )
+  }
+
   // ─── Render: Results ──────────────────────────────────────────────────────
 
   if (step === 8) {
+    // Use DB scores when available (always the case after successful save or on revisit)
+    const displayScores: ScoreMap = loadedCurrent
+      ? scoresFromSaved(loadedCurrent)
+      : wizardScores
+
+    const prevScores: ScoreMap | null = loadedPrev
+      ? scoresFromSaved(loadedPrev)
+      : null
+
     const chartData = DIMENSIONS.map((d) => ({
       dimension: d.short,
-      current:   scores[d.key] ?? 0,
-      previous:  prevData ? ((prevData as unknown) as Record<string, number>)[d.key] ?? 0 : 0,
+      current:   displayScores[d.key] ?? 0,
+      previous:  prevScores?.[d.key] ?? 0,
     }))
 
-    const avg = Math.round(Object.values(scores).reduce((s, v) => s + v, 0) / 8 * 10) / 10
+    const avg = Math.round(
+      Object.values(displayScores).reduce((s, v) => s + v, 0) / 8 * 10
+    ) / 10
+
+    const savedDate = loadedCurrent?.createdAt
+      ? new Date(loadedCurrent.createdAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' })
+      : null
 
     return (
       <div dir="rtl" className="max-w-lg mx-auto px-4 pt-6 pb-10 min-h-screen" style={{ background: '#0F172A', color: '#F8FAFC' }}>
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full flex items-center justify-center text-xl" style={{ background: '#1E293B' }}>
-            ›
-          </button>
-          <div>
-            <h1 className="text-xl font-bold">🕸️ چرخ زندگی</h1>
-            <p className="text-xs" style={{ color: '#94A3B8' }}>میانگین: {toPersian(avg)} از ۱۰</p>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-xl"
+              style={{ background: '#1E293B' }}
+            >
+              ›
+            </button>
+            <div>
+              <h1 className="text-xl font-bold">🕸️ چرخ زندگی</h1>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>
+                میانگین: {toPersian(avg)} از ۱۰
+                {savedDate && <span> · {savedDate}</span>}
+              </p>
+            </div>
           </div>
+          <button
+            onClick={startRetake}
+            className="text-xs px-3 py-1.5 rounded-lg font-medium"
+            style={{ background: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}
+          >
+            ارزیابی مجدد
+          </button>
         </div>
 
-        {/* Radar */}
+        {/* Radar chart */}
         <div className="rounded-2xl p-4 mb-5" style={{ background: '#1E293B' }}>
           <ResponsiveContainer width="100%" height={300}>
             <RadarChart data={chartData} outerRadius={100}>
               <PolarGrid stroke="#334155" />
-              <PolarAngleAxis dataKey="dimension" tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: 'IRANSansX' }} />
+              <PolarAngleAxis
+                dataKey="dimension"
+                tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: 'IRANSansX' }}
+              />
               <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
               <Radar name="فعلی" dataKey="current" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.25} />
-              {prevData && (
+              {prevScores && (
                 <Radar name="قبلی" dataKey="previous" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.08} strokeDasharray="4 2" />
               )}
             </RadarChart>
           </ResponsiveContainer>
-          {prevData && (
-            <div className="flex justify-center gap-5 text-xs mt-1" style={{ color: '#94A3B8' }}>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded inline-block" style={{ background: '#8B5CF6' }} />ارزیابی فعلی</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 rounded inline-block" style={{ background: '#3B82F6' }} />ارزیابی قبلی</span>
+          {prevScores && (
+            <div className="flex justify-center gap-5 text-xs mt-2" style={{ color: '#94A3B8' }}>
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 h-0.5 rounded inline-block" style={{ background: '#8B5CF6' }} />
+                ارزیابی فعلی
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-4 h-0.5 rounded inline-block border-dashed" style={{ background: '#3B82F6' }} />
+                ارزیابی قبلی
+              </span>
             </div>
           )}
         </div>
@@ -409,27 +550,36 @@ export default function WheelPage() {
         {/* Score cards */}
         <div className="grid grid-cols-4 gap-2 mb-6">
           {DIMENSIONS.map((d) => {
-            const score = scores[d.key] ?? 0
-            const pct   = score * 10
+            const score    = displayScores[d.key] ?? 0
+            const prevScore = prevScores?.[d.key] ?? null
+            const delta    = prevScore !== null ? score - prevScore : null
             return (
               <div key={d.key} className="rounded-xl p-3 text-center" style={{ background: '#1E293B' }}>
                 <p className="text-lg mb-1">{d.icon}</p>
                 <p className="text-[10px] mb-2" style={{ color: '#94A3B8' }}>{d.short}</p>
                 <div className="h-1 rounded-full overflow-hidden mb-1.5" style={{ background: '#334155' }}>
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: '#8B5CF6' }} />
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${score * 10}%`, background: '#8B5CF6' }}
+                  />
                 </div>
                 <p className="text-sm font-bold" style={{ color: '#8B5CF6' }}>{toPersian(score)}</p>
+                {delta !== null && delta !== 0 && (
+                  <p className="text-[9px] mt-0.5 font-medium" style={{ color: delta > 0 ? '#10B981' : '#EF4444' }}>
+                    {delta > 0 ? '▲' : '▼'} {toPersian(Math.abs(delta))}
+                  </p>
+                )}
               </div>
             )
           })}
         </div>
 
         <button
-          onClick={() => { setStep(0); setAnswers(initAnswers()); setMarital(null); setLovePhase('select') }}
+          onClick={startRetake}
           className="w-full py-3.5 rounded-xl text-sm font-bold"
           style={{ background: 'rgba(139,92,246,0.15)', color: '#8B5CF6' }}
         >
-          + ارزیابی جدید
+          + ارزیابی مجدد
         </button>
       </div>
     )
@@ -437,7 +587,7 @@ export default function WheelPage() {
 
   // ─── Render: Wizard ───────────────────────────────────────────────────────
 
-  const progressPct = ((step) / 8) * 100
+  const progressPct = (step / 8) * 100
 
   return (
     <div dir="rtl" className="max-w-lg mx-auto px-4 pt-5 pb-52 min-h-screen" style={{ background: '#0F172A', color: '#F8FAFC' }}>
@@ -445,7 +595,11 @@ export default function WheelPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <button onClick={() => router.back()} className="w-9 h-9 rounded-full flex items-center justify-center text-xl" style={{ background: '#1E293B' }}>
+          <button
+            onClick={() => router.back()}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xl"
+            style={{ background: '#1E293B' }}
+          >
             ›
           </button>
           <h1 className="text-base font-bold">🕸️ چرخ زندگی</h1>
@@ -453,7 +607,10 @@ export default function WheelPage() {
         <button
           onClick={saveDraft}
           className="text-xs px-3 py-1.5 rounded-lg transition-all"
-          style={{ background: draftSaved ? 'rgba(16,185,129,0.15)' : '#1E293B', color: draftSaved ? '#10B981' : '#94A3B8' }}
+          style={{
+            background: draftSaved ? 'rgba(16,185,129,0.15)' : '#1E293B',
+            color:      draftSaved ? '#10B981' : '#94A3B8',
+          }}
         >
           {draftSaved ? '✓ ذخیره شد' : '💾 ذخیره موقت'}
         </button>
@@ -478,19 +635,20 @@ export default function WheelPage() {
         className="transition-all duration-200"
         style={{ opacity: transitioning ? 0 : 1, transform: transitioning ? 'translateY(8px)' : 'translateY(0)' }}
       >
-
         {/* Dimension header */}
         <div className="mb-5">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-3xl">{dim?.icon}</span>
             <div>
-              <p className="text-xs font-medium mb-0.5" style={{ color: '#8B5CF6' }}>بُعد {toPersian(step + 1)}</p>
+              <p className="text-xs font-medium mb-0.5" style={{ color: '#8B5CF6' }}>
+                بُعد {toPersian(step + 1)}
+              </p>
               <h2 className="text-lg font-bold">{dim?.label}</h2>
             </div>
           </div>
           {!(isLoveStep && lovePhase === 'select') && (
             <p className="text-xs mt-2 mr-11" style={{ color: '#94A3B8' }}>
-              {currentQuestions.length} سؤال — هر سؤال را از {toPersian(currentScale[0])} تا {toPersian(currentScale[currentScale.length - 1])} ارزیابی کن
+              {currentQuestions.length} سؤال — از {toPersian(currentScale[0])} تا {toPersian(currentScale[currentScale.length - 1])} ارزیابی کن
             </p>
           )}
         </div>
@@ -506,8 +664,8 @@ export default function WheelPage() {
                 className="w-full py-4 rounded-2xl text-base font-bold text-right px-5 transition-all"
                 style={{
                   background: marital === opt ? 'rgba(139,92,246,0.2)' : '#1E293B',
-                  border: `2px solid ${marital === opt ? '#8B5CF6' : '#334155'}`,
-                  color: marital === opt ? '#A78BFA' : '#CBD5E1',
+                  border:     `2px solid ${marital === opt ? '#8B5CF6' : '#334155'}`,
+                  color:      marital === opt ? '#A78BFA' : '#CBD5E1',
                 }}
               >
                 {opt === 'مجرد' ? '🧑 مجرد' : '💑 متأهل'}
@@ -527,13 +685,16 @@ export default function WheelPage() {
                   ref={(el) => { questionRefs.current[qi] = el }}
                   className="rounded-2xl p-4"
                   style={{
-                    background: '#1E293B',
-                    border: `1px solid ${val !== null ? 'rgba(139,92,246,0.4)' : '#334155'}`,
-                    transition: 'border-color 0.2s',
+                    background:   '#1E293B',
+                    border:       `1px solid ${val !== null ? 'rgba(139,92,246,0.4)' : '#334155'}`,
+                    transition:   'border-color 0.2s',
                   }}
                 >
                   <p className="text-sm leading-7 mb-4" style={{ color: '#CBD5E1' }}>
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ml-2" style={{ background: 'rgba(139,92,246,0.2)', color: '#8B5CF6' }}>
+                    <span
+                      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ml-2"
+                      style={{ background: 'rgba(139,92,246,0.2)', color: '#8B5CF6' }}
+                    >
                       {toPersian(qi + 1)}
                     </span>
                     {q}
@@ -547,11 +708,11 @@ export default function WheelPage() {
                           onClick={() => handleAnswer(qi, score)}
                           className="flex-1 aspect-square rounded-xl text-sm font-bold transition-all duration-150 active:scale-90"
                           style={{
-                            background:   selected ? '#8B5CF6' : '#0F172A',
-                            color:        selected ? '#FFFFFF'  : '#64748B',
-                            border:       `2px solid ${selected ? '#8B5CF6' : '#334155'}`,
-                            boxShadow:    selected ? '0 0 12px rgba(139,92,246,0.4)' : 'none',
-                            maxWidth:     '52px',
+                            background: selected ? '#8B5CF6' : '#0F172A',
+                            color:      selected ? '#FFFFFF'  : '#64748B',
+                            border:     `2px solid ${selected ? '#8B5CF6' : '#334155'}`,
+                            boxShadow:  selected ? '0 0 12px rgba(139,92,246,0.4)' : 'none',
+                            maxWidth:   '52px',
                           }}
                         >
                           {toPersian(score)}
@@ -571,7 +732,12 @@ export default function WheelPage() {
         className="fixed bottom-20 right-0 left-0 px-4 py-4 max-w-lg mx-auto"
         style={{ background: 'linear-gradient(to top, #0F172A 70%, transparent)' }}
       >
-        {/* Submit on last dim */}
+        {saveError && (
+          <p className="text-xs text-center mb-2 px-2 py-1.5 rounded-lg" style={{ background: 'rgba(239,68,68,0.1)', color: '#FCA5A5' }}>
+            ⚠️ {saveError}
+          </p>
+        )}
+
         {step === 7 ? (
           <div className="flex gap-3">
             <button
@@ -584,8 +750,11 @@ export default function WheelPage() {
             <button
               onClick={handleSubmit}
               disabled={saving || !stepComplete}
-              className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: (!stepComplete || saving) ? '#334155' : '#8B5CF6', color: (!stepComplete || saving) ? '#64748B' : '#fff' }}
+              className="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all"
+              style={{
+                background: (!stepComplete || saving) ? '#334155' : '#8B5CF6',
+                color:      (!stepComplete || saving) ? '#64748B' : '#fff',
+              }}
             >
               {saving ? 'در حال ثبت...' : '✓ ثبت نتایج'}
             </button>
@@ -603,7 +772,10 @@ export default function WheelPage() {
               onClick={goNext}
               disabled={!stepComplete}
               className="flex-1 py-3.5 rounded-xl text-sm font-bold transition-all"
-              style={{ background: stepComplete ? '#8B5CF6' : '#1E293B', color: stepComplete ? '#fff' : '#475569' }}
+              style={{
+                background: stepComplete ? '#8B5CF6' : '#1E293B',
+                color:      stepComplete ? '#fff'    : '#475569',
+              }}
             >
               بعدی ›
             </button>

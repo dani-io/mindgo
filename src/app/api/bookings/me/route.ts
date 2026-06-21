@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     orderBy: { sessionDate: 'desc' },
     include: {
       coach: {
-        select: { id: true, userId: true, user: { select: { name: true } } },
+        select: { id: true, userId: true, shortBio: true, user: { select: { name: true } } },
       },
     },
   })
@@ -34,10 +34,12 @@ export async function GET(req: NextRequest) {
       bookingId:   booking.id,
       status:      booking.status,
       sessionDate: booking.sessionDate,
+      sessionTime: booking.sessionTime,
       coach: {
-        id:     booking.coach.id,
-        userId: booking.coach.userId,
-        name:   booking.coach.user.name ?? 'راه‌بلد',
+        id:       booking.coach.id,
+        userId:   booking.coach.userId,
+        name:     booking.coach.user.name ?? 'کوچ',
+        shortBio: booking.coach.shortBio ?? null,
       },
     },
   })

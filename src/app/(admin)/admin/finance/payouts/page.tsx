@@ -129,7 +129,7 @@ export default function AdminPayoutsPage() {
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--content-primary)' }}>مدیریت تسویه‌حساب</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--content-secondary)' }}>درخواست‌های برداشت راه‌بلدها</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--content-secondary)' }}>درخواست‌های برداشت کوچ‌ها</p>
         </div>
 
         <div className="flex gap-2 flex-wrap">
@@ -218,7 +218,7 @@ export default function AdminPayoutsPage() {
                     disabled={payouts.length === 0}
                   />
                 </th>
-                {['راه‌بلد', 'مبلغ', 'شبا', 'تاریخ درخواست', 'وضعیت', 'عملیات'].map((h) => (
+                {['کوچ', 'مبلغ', 'شبا', 'تاریخ درخواست', 'وضعیت', 'عملیات'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-right text-xs font-semibold"

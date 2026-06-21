@@ -113,7 +113,7 @@ export default function PaymentPage() {
       <div className="flex flex-col items-center justify-center min-h-screen px-4" style={{ color: 'var(--content-secondary)' }}>
         <p className="text-4xl mb-3">⚠️</p>
         <p className="mb-4">اطلاعات رزرو یافت نشد</p>
-        <button onClick={() => router.push('/coaches')} style={{ color: '#10B981' }}>بازگشت به راه‌بلدها</button>
+        <button onClick={() => router.push('/coaches')} style={{ color: '#10B981' }}>بازگشت به کوچ‌ها</button>
       </div>
     )
   }
@@ -149,7 +149,7 @@ export default function PaymentPage() {
             خلاصه سفارش
           </p>
           <div className="flex flex-col gap-2.5">
-            <Row label="راه‌بلد"  value={coachName} />
+            <Row label="کوچ"  value={coachName} />
             <Row label="پکیج"     value={pkgName} />
             <Row label="تاریخ"    value={dateLabel} />
             <Row label="ساعت"     value={toPersian(time)} />

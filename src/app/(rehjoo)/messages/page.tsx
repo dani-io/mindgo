@@ -67,14 +67,14 @@ export default function MessagesPage() {
             هنوز گفتگویی ندارید
           </p>
           <p className="text-sm text-center" style={{ color: 'var(--content-tertiary)' }}>
-            پس از رزرو جلسه می‌توانید با راه‌بلد خود گفتگو کنید
+            پس از رزرو جلسه می‌توانید با کوچ خود گفتگو کنید
           </p>
           <button
             onClick={() => router.push('/coaches')}
             className="mt-2 px-6 py-3 rounded-xl text-sm font-bold text-white"
             style={{ background: '#10B981' }}
           >
-            مشاهده راه‌بلدها
+            مشاهده کوچ‌ها
           </button>
         </div>
       ) : (

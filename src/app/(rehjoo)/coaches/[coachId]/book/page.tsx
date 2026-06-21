@@ -211,7 +211,7 @@ export default function BookPage() {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10 4l4 4-4 4M3 8h11" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          پروفایل راه‌بلد
+          پروفایل کوچ
         </button>
       </div>
 

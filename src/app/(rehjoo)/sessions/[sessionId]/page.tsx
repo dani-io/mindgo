@@ -97,7 +97,7 @@ export default function RehjooSessionPage() {
       const res = await fetch(`/api/sessions/${sessionId}/confirm`, { method: 'POST' })
       const json = await res.json()
       if (json.success) {
-        setFeedback('جلسه تأیید شد. سهم راه‌بلد آزاد شد. ممنون از اعتمادت! 🌱')
+        setFeedback('جلسه تأیید شد. سهم کوچ آزاد شد. ممنون از اعتمادت! 🌱')
       } else {
         setFeedback(json.error?.message ?? 'خطا در تأیید')
       }

@@ -26,7 +26,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'داشبورد آماری',      icon: '📊', href: '/admin',                   minRole: 'support_agent'  },
-  { label: 'صف تأیید راه‌بلدها', icon: '✅', href: '/admin/coaches/pending',   minRole: 'support_manager', badge: true },
+  { label: 'صف تأیید کوچ‌ها', icon: '✅', href: '/admin/coaches/pending',   minRole: 'support_manager', badge: true },
   { label: 'مدیریت رهجوها',     icon: '👥', href: '/admin/users',             minRole: 'support_agent'  },
   { label: 'مدیریت مالی',        icon: '💰', href: '/admin/finance',           minRole: 'super_admin'    },
   { label: 'مدیریت تسویه',       icon: '🏦', href: '/admin/finance/payouts',   minRole: 'super_admin'    },

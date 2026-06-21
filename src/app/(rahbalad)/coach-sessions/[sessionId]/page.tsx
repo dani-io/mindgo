@@ -33,7 +33,7 @@ export default function CoachSessionPage() {
 
   const [session,    setSession]    = useState<SessionData | null>(null)
   const [view,       setView]       = useState<ViewState>('loading')
-  const [userName,   setUserName]   = useState('راه‌بلد')
+  const [userName,   setUserName]   = useState('کوچ')
   const [notes,      setNotes]      = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [saved,      setSaved]      = useState(false)

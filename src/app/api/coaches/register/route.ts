@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const existing = await prisma.coachProfile.findUnique({ where: { userId: payload.sub } })
   if (existing) {
     return NextResponse.json(
-      { success: false, error: { code: 'ALREADY_EXISTS', message: 'شما قبلاً به عنوان راه‌بلد ثبت‌نام کرده‌اید' } },
+      { success: false, error: { code: 'ALREADY_EXISTS', message: 'شما قبلاً به عنوان کوچ ثبت‌نام کرده‌اید' } },
       { status: 409 }
     )
   }

@@ -248,10 +248,10 @@ export default function CoachDashboardPage() {
       {/* Greeting */}
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--content-primary)' }}>
-          سلام، {data.name || 'راه‌بلد'} 👋
+          سلام، {data.name || 'کوچ'} 👋
         </h1>
         <p className="text-sm mt-0.5" style={{ color: 'var(--content-secondary)' }}>
-          خوش اومدی به پنل راه‌بلدت
+          خوش اومدی به پنل کوچت
         </p>
       </div>
 

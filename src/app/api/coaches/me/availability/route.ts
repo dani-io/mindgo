@@ -9,7 +9,7 @@ async function getCoachId(req: NextRequest): Promise<{ coachId: string } | NextR
   if (!payload) return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED' } }, { status: 401 })
 
   const coach = await prisma.coachProfile.findUnique({ where: { userId: payload.sub }, select: { id: true } })
-  if (!coach) return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'پروفایل راه‌بلد یافت نشد' } }, { status: 404 })
+  if (!coach) return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'پروفایل کوچ یافت نشد' } }, { status: 404 })
 
   return { coachId: coach.id }
 }

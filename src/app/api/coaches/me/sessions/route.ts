@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     select: { id: true },
   })
   if (!coach) {
-    return NextResponse.json({ success: false, error: { message: 'پروفایل راه‌بلد یافت نشد' } }, { status: 404 })
+    return NextResponse.json({ success: false, error: { message: 'پروفایل کوچ یافت نشد' } }, { status: 404 })
   }
 
   const { searchParams } = new URL(req.url)

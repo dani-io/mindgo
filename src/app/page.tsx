@@ -3,7 +3,7 @@ import Link from 'next/link'
 const FEATURES = [
   {
     icon: '🧭',
-    title: 'راه‌بلدهای حرفه‌ای',
+    title: 'کوچ‌های حرفه‌ای',
     desc: 'کوچ‌های دارای مدرک ICF و موسسات معتبر، با جعبه ابزار اعتماد کامل',
     color: '#10B981',
   },
@@ -34,20 +34,20 @@ const FEATURES = [
   {
     icon: '🛡️',
     title: 'پرداخت امن Escrow',
-    desc: 'پولت تا پایان موفق جلسه قفله — هم تو هم راه‌بلد با آرامش خاطر',
+    desc: 'پولت تا پایان موفق جلسه قفله — هم تو هم کوچ با آرامش خاطر',
     color: '#10B981',
   },
 ]
 
 const STEPS = [
   { num: '۱', title: 'ثبت‌نام در ۳۰ ثانیه', desc: 'فقط شماره موبایل کافیه', icon: '📱' },
-  { num: '۲', title: 'راه‌بلدت رو انتخاب کن', desc: 'پروفایل، صدا، مدارک — همه چیز شفاف', icon: '🔍' },
+  { num: '۲', title: 'کوچت رو انتخاب کن', desc: 'پروفایل، صدا، مدارک — همه چیز شفاف', icon: '🔍' },
   { num: '۳', title: 'مسیر رشدت رو شروع کن', desc: 'جلسه آنلاین، اتاق رشد، قبیله', icon: '🚀' },
 ]
 
 const TESTIMONIALS = [
   {
-    text: 'بعد از ۳ ماه کار با راه‌بلدم، اولین کسب‌وکارم رو راه‌اندازی کردم. Mindgo یه تحول واقعی بود.',
+    text: 'بعد از ۳ ماه کار با کوچم، اولین کسب‌وکارم رو راه‌اندازی کردم. Mindgo یه تحول واقعی بود.',
     name: 'سارا — تهران',
     tag: 'بیزینس کوچینگ',
     color: '#10B981',
@@ -68,12 +68,12 @@ const TESTIMONIALS = [
 
 const FAQ_ITEMS = [
   {
-    q: 'تفاوت راه‌بلد با روانپزشک چیست؟',
-    a: 'کوچینگ بر توانمندسازی آینده تمرکز دارد، نه درمان گذشته. راه‌بلد یک همراه حرفه‌ای است که مسیر رشد شخصی و حرفه‌ای شما را روشن می‌کند.',
+    q: 'تفاوت کوچ با روانپزشک چیست؟',
+    a: 'کوچینگ بر توانمندسازی آینده تمرکز دارد، نه درمان گذشته. کوچ یک همراه حرفه‌ای است که مسیر رشد شخصی و حرفه‌ای شما را روشن می‌کند.',
   },
   {
     q: 'آیا جلسه اول رایگان است؟',
-    a: 'جلسه معارفه با قیمت بسیار پایین برگزار می‌شود تا بتوانی راه‌بلد را بشناسی بدون ریسک.',
+    a: 'جلسه معارفه با قیمت بسیار پایین برگزار می‌شود تا بتوانی کوچ را بشناسی بدون ریسک.',
   },
   {
     q: 'اگر از جلسه راضی نبودم چه؟',
@@ -81,7 +81,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'آیا اطلاعاتم خصوصی می‌ماند؟',
-    a: 'اتاق رشد کاملاً خصوصی است. هیچ‌کس — حتی راه‌بلد — بدون اجازه‌ات به یادداشت‌هایت دسترسی ندارد.',
+    a: 'اتاق رشد کاملاً خصوصی است. هیچ‌کس — حتی کوچ — بدون اجازه‌ات به یادداشت‌هایت دسترسی ندارد.',
   },
 ]
 
@@ -137,7 +137,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-lg mb-10 leading-relaxed" style={{ color: '#94A3B8' }}>
-          اولین پلتفرم کوچینگ و توسعه فردی فارسی — با راه‌بلدهای دارای مدرک،
+          اولین پلتفرم کوچینگ و توسعه فردی فارسی — با کوچ‌های دارای مدرک،
           اتاق رشد خصوصی، و جامعه‌ای از هم‌مسیران
         </p>
 
@@ -154,14 +154,14 @@ export default function LandingPage() {
             className="font-semibold px-8 py-4 rounded-2xl text-base"
             style={{ background: 'rgba(255,255,255,0.06)', color: '#E2E8F0', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            مشاهده راه‌بلدها
+            مشاهده کوچ‌ها
           </Link>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-6 mt-16">
           {[
-            { n: '۵۰+',   label: 'راه‌بلد دارای مدرک' },
+            { n: '۵۰+',   label: 'کوچ دارای مدرک' },
             { n: '۱۰۰٪', label: 'پرداخت امن اسکرو' },
             { n: '۲۴/۷', label: 'دسترسی به اتاق رشد' },
           ].map(({ n, label }) => (
@@ -235,16 +235,16 @@ export default function LandingPage() {
           style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}
         >
           <p className="text-4xl mb-4">🧭</p>
-          <h2 className="text-xl font-bold mb-3" style={{ color: '#E2E8F0' }}>راه‌بلد هستی؟</h2>
+          <h2 className="text-xl font-bold mb-3" style={{ color: '#E2E8F0' }}>کوچ هستی؟</h2>
           <p className="text-sm leading-relaxed mb-6" style={{ color: '#94A3B8' }}>
-            به جامعه راه‌بلدهای Mindgo بپیوند. پروفایل حرفه‌ای، مدیریت جلسات، کیف پول — همه در یک پنل
+            به جامعه کوچ‌های Mindgo بپیوند. پروفایل حرفه‌ای، مدیریت جلسات، کیف پول — همه در یک پنل
           </p>
           <Link
             href="/coaches/register"
             className="inline-block font-bold px-6 py-3 rounded-xl text-white"
             style={{ background: '#10B981' }}
           >
-            ثبت‌نام به عنوان راه‌بلد ›
+            ثبت‌نام به عنوان کوچ ›
           </Link>
         </div>
       </section>
@@ -331,7 +331,7 @@ export default function LandingPage() {
         <div className="flex justify-center gap-6">
           {[
             { href: '/login',            label: 'ورود' },
-            { href: '/coaches',          label: 'راه‌بلدها' },
+            { href: '/coaches',          label: 'کوچ‌ها' },
             { href: '/coaches/register', label: 'ثبت‌نام کوچ' },
           ].map(({ href, label }) => (
             <Link key={href} href={href} className="text-xs" style={{ color: '#475569' }}>

@@ -229,7 +229,7 @@ export default function CoachRegisterPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-3xl">🧠</span>
-          <p className="text-sm font-semibold mt-2" style={{ color: '#10B981' }}>ثبت‌نام راه‌بلد</p>
+          <p className="text-sm font-semibold mt-2" style={{ color: '#10B981' }}>ثبت‌نام کوچ</p>
         </div>
 
         <ProgressBar step={step} />

@@ -66,7 +66,7 @@ function ResolveModal({
     },
     {
       value: 'release_coach',
-      label: 'حکم به نفع راه‌بلد (آزادسازی سهم)',
+      label: 'حکم به نفع کوچ (آزادسازی سهم)',
       desc:  'سهم قفل‌شده کوچ آزاد و به موجودی قابل برداشت منتقل می‌شود',
       color: '#10B981',
     },
@@ -266,7 +266,7 @@ export default function AdminDisputesPage() {
                       <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>{d.clientPhone}</p>
                     </div>
                     <div>
-                      <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>راه‌بلد</p>
+                      <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>کوچ</p>
                       <p className="text-sm font-medium" style={{ color: 'var(--content-primary)' }}>
                         {d.coachName ?? '—'}
                       </p>

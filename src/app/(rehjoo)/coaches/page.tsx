@@ -178,7 +178,7 @@ export default function CoachesPage() {
 
       {/* Header */}
       <h1 className="text-2xl font-bold mb-5" style={{ color: 'var(--content-primary)' }}>
-        راه‌بلدها
+        کوچ‌ها
       </h1>
 
       {/* Search */}
@@ -269,12 +269,12 @@ export default function CoachesPage() {
       ) : coaches.length === 0 ? (
         <div className="text-center py-16" style={{ color: 'var(--content-tertiary)' }}>
           <p className="text-4xl mb-3">🔍</p>
-          <p className="text-sm">راه‌بلدی با این مشخصات یافت نشد</p>
+          <p className="text-sm">کوچی با این مشخصات یافت نشد</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <p className="text-xs mb-1" style={{ color: 'var(--content-tertiary)' }}>
-            {toPersian(coaches.length)} راه‌بلد یافت شد
+            {toPersian(coaches.length)} کوچ یافت شد
           </p>
           {coaches.map((c) => (
             <CoachCard

@@ -18,7 +18,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 const NAV_ITEMS = [
   { href: '/dashboard',   icon: '🏠', label: 'داشبورد'   },
   { href: '/growth-room', icon: '🌱', label: 'اتاق رشد'  },
-  { href: '/coaches',     icon: '🧭', label: 'راه‌بلدها' },
+  { href: '/coaches',     icon: '🧭', label: 'کوچ‌ها' },
   { href: '/tribe',       icon: '👥', label: 'قبیله'      },
   { href: '/profile',     icon: '👤', label: 'پروفایل'    },
 ]

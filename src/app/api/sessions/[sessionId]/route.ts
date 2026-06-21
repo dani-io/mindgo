@@ -86,7 +86,7 @@ export async function PATCH(
 
   const isCoach = session.booking.coach.userId === payload.sub
   if (!isCoach && payload.role !== 'admin') {
-    return Response.json({ success: false, error: { message: 'فقط راه‌بلد می‌تواند وضعیت جلسه را تغییر دهد' } }, { status: 403 })
+    return Response.json({ success: false, error: { message: 'فقط کوچ می‌تواند وضعیت جلسه را تغییر دهد' } }, { status: 403 })
   }
 
   const body = await req.json().catch(() => ({}))

@@ -99,7 +99,7 @@ export default function PaymentSuccessPage() {
           </p>
 
           <div className="flex flex-col gap-3">
-            {coachName && <DetailRow icon="🧭" label="راه‌بلد"  value={coachName} />}
+            {coachName && <DetailRow icon="🧭" label="کوچ"  value={coachName} />}
             {pkgName   && <DetailRow icon="📦" label="پکیج"    value={pkgName} />}
             {dateLabel && <DetailRow icon="📅" label="تاریخ"   value={dateLabel} />}
             {time      && <DetailRow icon="⏰" label="ساعت"    value={toPersian(time)} />}
@@ -174,7 +174,7 @@ export default function PaymentSuccessPage() {
             border:     '1px solid var(--border-color)',
           }}
         >
-          مشاهده راه‌بلدهای دیگر
+          مشاهده کوچ‌های دیگر
         </button>
       </div>
     </div>

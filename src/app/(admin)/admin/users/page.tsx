@@ -21,7 +21,7 @@ type RoleFilter = 'all' | 'rehjoo' | 'rahbalad'
 
 const ROLE_LABELS: Record<string, string> = {
   rehjoo:   'رهجو',
-  rahbalad: 'راه‌بلد',
+  rahbalad: 'کوچ',
   admin:    'ادمین',
 }
 
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
   const TABS: { label: string; value: RoleFilter }[] = [
     { label: 'همه',      value: 'all'      },
     { label: 'رهجوها',   value: 'rehjoo'   },
-    { label: 'راه‌بلدها', value: 'rahbalad' },
+    { label: 'کوچ‌ها', value: 'rahbalad' },
   ]
 
   return (

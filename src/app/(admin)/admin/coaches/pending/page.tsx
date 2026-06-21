@@ -190,7 +190,7 @@ function CoachCard({
               </div>
               {coach.voiceIntroUrl && (
                 <div>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--content-tertiary)' }}>🎙️ صدای راه‌بلد</p>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--content-tertiary)' }}>🎙️ صدای کوچ</p>
                   <audio controls className="w-full h-9" src={coach.voiceIntroUrl} />
                 </div>
               )}
@@ -292,7 +292,7 @@ export default function PendingCoachesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--content-primary)' }}>صف تأیید راه‌بلدها</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--content-primary)' }}>صف تأیید کوچ‌ها</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--content-secondary)' }}>
           {loading ? '...' : `${coaches.length} درخواست در انتظار بررسی`}
         </p>
