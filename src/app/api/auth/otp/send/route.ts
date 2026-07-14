@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { sendOTP } from '@/lib/services/sms.service'
 
 const OTP_TTL_SECONDS = 120
 const RATE_LIMIT_WINDOW_MINUTES = 10
@@ -66,7 +67,6 @@ export async function POST(req: NextRequest) {
     data: { phone, code, expiresAt },
   })
 
-  // TODO: replace with Kavenegar SDK once API key is configured
   console.log(`[OTP] phone=${phone} code=${code} expires=${expiresAt.toISOString()}`)
 
   const testPhones = (process.env.TEST_PHONES ?? '')
@@ -74,6 +74,20 @@ export async function POST(req: NextRequest) {
     .map((p) => p.trim())
     .filter(Boolean)
   const isTestMode = process.env.NODE_ENV !== 'production' || testPhones.includes(phone)
+
+  // Send the real SMS whenever a provider is configured. SMS failures must not
+  // block login — we log and still return success.
+  const smsProviderConfigured = (process.env.SMS_PROVIDER ?? '').trim() !== ''
+  if (smsProviderConfigured) {
+    try {
+      const sent = await sendOTP(phone, code)
+      if (!sent) {
+        console.error(`[OTP] SMS delivery failed for phone=${phone}`)
+      }
+    } catch (err) {
+      console.error(`[OTP] SMS delivery threw for phone=${phone}:`, err)
+    }
+  }
 
   return NextResponse.json({
     success: true,
