@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { logout } from '@/lib/utils/logout'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logout */}
         <div className="px-5 py-4" style={{ borderTop: '1px solid var(--border-color)' }}>
           <button
-            onClick={() => { localStorage.removeItem('mg_token'); window.location.href = '/login' }}
+            onClick={() => logout()}
             className="w-full flex items-center gap-3 py-2 text-sm transition-all"
             style={{ color: '#EF4444' }}
           >

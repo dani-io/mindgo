@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import NotificationBell from '@/components/layout/NotificationBell'
+import { logout } from '@/lib/utils/logout'
 
 interface CoachInfo {
   name: string
@@ -96,7 +97,7 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
           📩 نتیجه بررسی از طریق پیامک اطلاع‌رسانی خواهد شد
         </div>
         <button
-          onClick={() => { localStorage.removeItem('mg_token'); window.location.href = '/login' }}
+          onClick={() => logout()}
           className="mt-8 text-sm"
           style={{ color: 'var(--content-tertiary)' }}
         >
@@ -157,6 +158,15 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
               >
                 {(coach.name || 'ر').charAt(0)}
               </div>
+            </button>
+            <button
+              onClick={() => logout()}
+              aria-label="خروج از حساب"
+              title="خروج از حساب"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-base active:opacity-70"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}
+            >
+              🚪
             </button>
           </div>
         )}

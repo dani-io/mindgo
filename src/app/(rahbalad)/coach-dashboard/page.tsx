@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import jalaali from 'jalaali-js'
+import { logout } from '@/lib/utils/logout'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -510,6 +511,22 @@ export default function CoachDashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Account / logout */}
+      <section className="pt-2">
+        <button
+          onClick={() => logout()}
+          className="w-full flex items-center justify-center gap-2 rounded-xl p-4 text-sm font-bold transition-all active:scale-[0.99]"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            color: '#EF4444',
+            border: '1px solid rgba(239,68,68,0.3)',
+          }}
+        >
+          <span className="text-base">🚪</span>
+          خروج از حساب کاربری
+        </button>
+      </section>
 
     </div>
   )

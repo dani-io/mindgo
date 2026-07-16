@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ThemeToggle from '@/components/layout/ThemeToggle'
+import { logout } from '@/lib/utils/logout'
 
 type ThemeMode = 'auto' | 'dark' | 'light'
 
@@ -58,8 +59,7 @@ export default function SettingsPage() {
   }
 
   function handleLogout() {
-    localStorage.removeItem('mg_token')
-    router.push('/login')
+    logout()
   }
 
   return (
@@ -196,26 +196,37 @@ export default function SettingsPage() {
           className="rounded-2xl overflow-hidden"
           style={{ border: '1px solid var(--border-color)' }}
         >
-          {phone && (
+          {phone ? (
             <div
               className="flex items-center justify-between p-4"
-              style={{ background: 'var(--surface-card)', borderBottom: '1px solid var(--border-color)' }}
+              style={{ background: 'var(--surface-card)' }}
             >
               <span className="text-sm" style={{ color: 'var(--content-secondary)' }}>شماره موبایل</span>
               <span className="text-sm font-medium" style={{ color: 'var(--content-primary)', direction: 'ltr' }}>
                 {phone}
               </span>
             </div>
+          ) : (
+            <div className="p-4" style={{ background: 'var(--surface-card)' }}>
+              <span className="text-sm" style={{ color: 'var(--content-tertiary)' }}>حساب کاربری Mindgo</span>
+            </div>
           )}
-          <button
-            onClick={handleLogout}
-            className="w-full p-4 text-right text-sm font-bold transition-all active:scale-[0.99]"
-            style={{ background: 'var(--surface-card)', color: '#EF4444' }}
-          >
-            خروج از حساب کاربری 🚪
-          </button>
         </div>
       </div>
+
+      {/* Logout — prominent, full-width */}
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl p-4 mb-6 text-sm font-bold transition-all active:scale-[0.99]"
+        style={{
+          background: 'rgba(239,68,68,0.08)',
+          color: '#EF4444',
+          border: '1px solid rgba(239,68,68,0.3)',
+        }}
+      >
+        <span className="text-base">🚪</span>
+        خروج از حساب کاربری
+      </button>
 
       {/* App version */}
       <p className="text-center text-xs" style={{ color: 'var(--content-tertiary)' }}>

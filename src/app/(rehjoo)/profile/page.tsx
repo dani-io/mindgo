@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import ImageCropper from '@/components/ui/ImageCropper'
+import { logout } from '@/lib/utils/logout'
 
 interface ProfileData {
   id:          string
@@ -280,6 +281,16 @@ export default function ProfilePage() {
           </span>
           <span style={{ color: 'var(--content-tertiary)' }}>›</span>
         </Link>
+        <button
+          onClick={() => logout()}
+          className="w-full flex items-center justify-between rounded-xl p-4 text-right"
+          style={{ background: 'var(--surface-card)', border: '1px solid rgba(239,68,68,0.3)' }}
+        >
+          <span className="text-sm font-semibold" style={{ color: '#EF4444' }}>
+            🚪 خروج از حساب
+          </span>
+          <span style={{ color: '#EF4444' }}>›</span>
+        </button>
       </div>
     </div>
   )
