@@ -297,15 +297,15 @@ export default function CoachDashboardPage() {
         />
       </div>
 
-      {/* Commission badge */}
+      {/* No-commission badge (early launch: 100% goes to the coach) */}
       <div
         className="rounded-xl px-4 py-3 flex items-center gap-3"
         style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}
       >
-        <span className="text-xl">💼</span>
+        <span className="text-xl">🎉</span>
         <div>
           <p className="text-sm font-semibold" style={{ color: '#10B981' }}>
-            سهم شما از هر جلسه: {toPersian(Math.round(data.commissionRate * 100))}٪
+            بدون کارمزد — ۱۰۰٪ درآمد برای شما
           </p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--content-tertiary)' }}>
             درآمد کل: {formatPrice(earnings)}

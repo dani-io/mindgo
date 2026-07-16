@@ -1,8 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { formatCardNumber } from '@/lib/payments'
 
 // ── Types ─────────────────────────────────────────────────
+
+interface PendingCardPayment {
+  id:              string
+  amount:          number
+  trackingCode:    string | null
+  receiptImageUrl: string | null
+  clientName:      string
+  packageName:     string
+  sessionDate:     string
+  sessionTime:     string
+  createdAt:       string
+}
 
 interface WalletData {
   totalEarned:      number
@@ -10,6 +23,8 @@ interface WalletData {
   availableAmount:  number
   shebaNumber:      string | null
   accountHolder:    string | null
+  cardNumber:       string | null
+  cardHolderName:   string | null
   canRequestPayout: boolean
   minPayoutAmount:  number
   transactions: {
@@ -105,6 +120,8 @@ export default function CoachWalletPage() {
   const [payoutAmount, setPayoutAmount] = useState('')
   const [payoutLoading, setPayoutLoading] = useState(false)
   const [payoutMsg,    setPayoutMsg]    = useState<{ text: string; ok: boolean } | null>(null)
+  const [pendingCards, setPendingCards] = useState<PendingCardPayment[]>([])
+  const [verifyingId,  setVerifyingId]  = useState<string | null>(null)
 
   async function loadWallet() {
     try {
@@ -118,7 +135,33 @@ export default function CoachWalletPage() {
     } catch { /* silent */ }
   }
 
-  useEffect(() => { loadWallet().finally(() => setLoading(false)) }, [])
+  async function loadPendingCards() {
+    try {
+      const res  = await fetch('/api/coaches/me/card-payments')
+      const json = await res.json()
+      if (json.success) setPendingCards(json.data)
+    } catch { /* silent */ }
+  }
+
+  useEffect(() => { Promise.all([loadWallet(), loadPendingCards()]).finally(() => setLoading(false)) }, [])
+
+  async function verifyCardPayment(id: string, action: 'confirm' | 'reject') {
+    setVerifyingId(id)
+    try {
+      const res  = await fetch(`/api/payments/${id}/verify`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setPendingCards((prev) => prev.filter((p) => p.id !== id))
+        loadWallet()
+      }
+    } catch { /* silent */ } finally {
+      setVerifyingId(null)
+    }
+  }
 
   async function handleSaveSheba() {
     setSavingSheba(true)
@@ -191,6 +234,56 @@ export default function CoachWalletPage() {
         </div>
       </div>
 
+      {/* Pending card-to-card payments awaiting verification */}
+      {pendingCards.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold mb-3" style={{ color: '#F59E0B' }}>
+            ⏳ پرداخت‌های در انتظار تأیید ({toPersian(pendingCards.length)})
+          </h2>
+          <div className="flex flex-col gap-3">
+            {pendingCards.map((p) => (
+              <div
+                key={p.id}
+                className="rounded-xl p-4"
+                style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.3)' }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-sm" style={{ color: 'var(--content-primary)' }}>{p.clientName}</p>
+                  <p className="font-bold text-sm" style={{ color: '#10B981' }}>{formatPrice(p.amount)}</p>
+                </div>
+                <p className="text-xs mb-1" style={{ color: 'var(--content-tertiary)' }}>پکیج: {p.packageName}</p>
+                <p className="text-xs mb-2" style={{ color: 'var(--content-secondary)' }}>
+                  کد رهگیری: <span style={{ direction: 'ltr', fontFamily: 'monospace', color: 'var(--content-primary)' }}>{p.trackingCode}</span>
+                </p>
+                {p.receiptImageUrl && (
+                  <a href={p.receiptImageUrl} target="_blank" rel="noopener noreferrer" className="text-xs" style={{ color: '#3B82F6' }}>
+                    🧾 مشاهده تصویر رسید
+                  </a>
+                )}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => verifyCardPayment(p.id, 'confirm')}
+                    disabled={verifyingId === p.id}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white transition-all active:scale-95"
+                    style={{ background: '#10B981', opacity: verifyingId === p.id ? 0.6 : 1 }}
+                  >
+                    {verifyingId === p.id ? '...' : 'تأیید دریافت وجه ✅'}
+                  </button>
+                  <button
+                    onClick={() => verifyCardPayment(p.id, 'reject')}
+                    disabled={verifyingId === p.id}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                    style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                  >
+                    عدم دریافت ❌
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Payout request */}
       <section className="mb-6">
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--content-secondary)' }}>
@@ -261,6 +354,22 @@ export default function CoachWalletPage() {
           className="rounded-xl p-4"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
         >
+          {/* Card number (used for card-to-card payments; edit in profile) */}
+          <div className="mb-3 pb-3" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>💳 شماره کارت (کارت‌به‌کارت)</label>
+            {wallet.cardNumber ? (
+              <>
+                <p className="text-sm font-semibold" style={{ color: 'var(--content-primary)', direction: 'ltr', textAlign: 'left', fontFamily: 'monospace' }}>
+                  {toPersian(formatCardNumber(wallet.cardNumber))}
+                </p>
+                {wallet.cardHolderName && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--content-tertiary)' }}>{wallet.cardHolderName}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: '#F59E0B' }}>ثبت نشده — از «ویرایش پروفایل» اضافه کنید</p>
+            )}
+          </div>
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>شماره شبا (IR + ۲۴ رقم)</label>

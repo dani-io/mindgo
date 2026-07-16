@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const coach = await prisma.coachProfile.findUnique({
     where: { userId: payload.sub },
-    select: { id: true },
+    select: { id: true, cardNumber: true, cardHolderName: true },
   })
   if (!coach) {
     return NextResponse.json({ success: false, error: { code: 'NOT_FOUND' } }, { status: 404 })
@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
       availableAmount: wallet.availableAmount,
       shebaNumber:     wallet.shebaNumber,
       accountHolder:   wallet.accountHolder,
+      cardNumber:      coach.cardNumber,
+      cardHolderName:  coach.cardHolderName,
       canRequestPayout: wallet.availableAmount >= 500_000,
       minPayoutAmount:  500_000,
       transactions: wallet.transactions.map((t) => ({

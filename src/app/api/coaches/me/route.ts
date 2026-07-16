@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { isValidCardNumber } from '@/lib/payments'
 
 async function requireCoach(req: NextRequest) {
   const token = req.cookies.get('mg_token')?.value
@@ -62,6 +63,8 @@ export async function GET(req: NextRequest) {
       genderAccept:    coach.genderAccept,
       voiceIntroUrl:   coach.voiceIntroUrl,
       status:          coach.status,
+      cardNumber:      coach.cardNumber,
+      cardHolderName:  coach.cardHolderName,
       commissionRate:  Number(coach.commissionRate),
       totalSessions:   coach.totalSessions,
       avgRating:       Number(coach.avgRating),
@@ -127,7 +130,20 @@ export async function PATCH(req: NextRequest) {
   if (auth.error) return auth.res
 
   const body = await req.json()
-  const { name, short_bio, full_bio, gender_accept, specialization_ids } = body
+  const { name, short_bio, full_bio, gender_accept, specialization_ids, card_number, card_holder_name } = body
+
+  // Card number: 16 digits only (strip formatting spaces/dashes first).
+  let normalizedCard: string | undefined
+  if (card_number !== undefined) {
+    const digits = String(card_number).replace(/\D/g, '')
+    if (digits !== '' && !isValidCardNumber(digits)) {
+      return NextResponse.json(
+        { success: false, error: { code: 'INVALID_CARD', message: 'شماره کارت باید ۱۶ رقم باشد' } },
+        { status: 400 }
+      )
+    }
+    normalizedCard = digits
+  }
 
   const coach = await prisma.coachProfile.findUnique({ where: { userId: auth.userId } })
   if (!coach) {
@@ -143,6 +159,8 @@ export async function PATCH(req: NextRequest) {
     if (short_bio     !== undefined) profileUpdates.shortBio     = short_bio
     if (full_bio      !== undefined) profileUpdates.fullBio      = full_bio
     if (gender_accept !== undefined) profileUpdates.genderAccept = gender_accept
+    if (normalizedCard !== undefined)     profileUpdates.cardNumber     = normalizedCard || null
+    if (card_holder_name !== undefined)   profileUpdates.cardHolderName = String(card_holder_name).trim() || null
 
     if (Object.keys(profileUpdates).length > 0) {
       await tx.coachProfile.update({ where: { id: coach.id }, data: profileUpdates })

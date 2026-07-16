@@ -130,6 +130,8 @@ model CoachProfile {
   videoIntroUrl   String?      @map("video_intro_url")
   status          CoachStatus  @default(pending)
   rejectionReason String?      @map("rejection_reason")
+  cardNumber      String?      @map("card_number") @db.VarChar(16)
+  cardHolderName  String?      @map("card_holder_name") @db.VarChar(100)
   commissionRate  Decimal      @default(0.70) @map("commission_rate") @db.Decimal(3, 2)
   totalSessions   Int          @default(0) @map("total_sessions")
   avgRating       Decimal      @default(0.0) @map("avg_rating") @db.Decimal(2, 1)
@@ -329,13 +331,16 @@ model Review {
 enum PaymentMethod {
   zarinpal
   snappay
+  card_to_card
 }
 
 enum PaymentStatus {
   pending
+  pending_verification
   paid
   failed
   refunded
+  disputed
 }
 
 model Payment {
@@ -346,6 +351,8 @@ model Payment {
   method           PaymentMethod
   status           PaymentStatus @default(pending)
   gatewayRef       String?       @map("gateway_ref") @db.VarChar(100)
+  trackingCode     String?       @map("tracking_code") @db.VarChar(100)
+  receiptImageUrl  String?       @map("receipt_image_url")
   platformShare    Int           @map("platform_share")
   coachShare       Int           @map("coach_share")
   isInstallment    Boolean       @default(false) @map("is_installment")

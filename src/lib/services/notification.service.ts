@@ -50,6 +50,48 @@ export async function sendBookingReceivedForCoach(coachUserId: string, clientNam
   )
 }
 
+// ── Card-to-card payment ──────────────────────────────────
+
+// Notify coach that a rehjoo submitted a card-to-card payment awaiting verification.
+export async function sendCardPaymentPendingForCoach(coachUserId: string, clientName: string, amount: number): Promise<void> {
+  const amountStr = amount.toLocaleString('fa-IR')
+  await createInAppNotification(
+    coachUserId, 'booking_confirmed',
+    'پرداخت جدید — لطفاً تأیید کنید 💳',
+    `${clientName} مبلغ ${amountStr} تومان کارت‌به‌کارت واریز کرد. لطفاً دریافت وجه را تأیید کنید.`,
+  )
+}
+
+// Notify rehjoo their card-to-card payment was confirmed by the coach.
+export async function sendCardPaymentConfirmed(userId: string, packageName: string): Promise<void> {
+  await createInAppNotification(
+    userId, 'booking_confirmed',
+    'پرداخت تأیید شد ✅',
+    `کوچ دریافت وجه پکیج «${packageName}» را تأیید کرد. رزرو شما نهایی شد.`,
+  )
+}
+
+// Notify rehjoo their card-to-card payment was disputed by the coach.
+export async function sendCardPaymentDisputed(userId: string, packageName: string): Promise<void> {
+  await createInAppNotification(
+    userId, 'system',
+    'مشکل در تأیید پرداخت ⚠️',
+    `کوچ دریافت وجه پکیج «${packageName}» را تأیید نکرد. تیم پشتیبانی موضوع را بررسی می‌کند.`,
+  )
+}
+
+// Broadcast a system notification to every active admin/support user.
+export async function notifyAdmins(title: string, body: string): Promise<void> {
+  const admins = await prisma.adminRole.findMany({
+    where:  { isActive: true },
+    select: { userId: true },
+  })
+  if (admins.length === 0) return
+  await prisma.notification.createMany({
+    data: admins.map((a) => ({ userId: a.userId, type: 'in_app' as const, category: 'system' as const, title, body })),
+  })
+}
+
 // ── Streak / XP ────────────────────────────────────────────
 
 export async function sendStreakAtRiskAlert(userId: string, streak: number): Promise<void> {

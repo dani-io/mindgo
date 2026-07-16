@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import FileUpload from '@/components/ui/FileUpload'
 import AudioRecorder from '@/components/ui/AudioRecorder'
+import { formatCardNumber, isValidCardNumber } from '@/lib/payments'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -113,6 +114,8 @@ export default function CoachRegisterPage() {
   // Step 1: Basic info
   const [name,  setName]  = useState('')
   const [phone, setPhone] = useState('')
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardHolder, setCardHolder] = useState('')
 
   // Step 2: Bio + specializations
   const [shortBio,       setShortBio]       = useState('')
@@ -190,6 +193,8 @@ export default function CoachRegisterPage() {
           short_bio:       shortBio,
           full_bio:        fullBio,
           gender_accept:   genderAccept,
+          card_number:     cardNumber.replace(/\D/g, ''),
+          card_holder_name: cardHolder,
           specialization_ids: selectedSpecs,
           certificates: certs.map((c) => ({
             title:     c.title,
@@ -239,8 +244,13 @@ export default function CoachRegisterPage() {
           <StepShell
             title="اطلاعات پایه"
             subtitle="نام شما در پروفایل عمومی نمایش داده می‌شود"
-            onNext={() => { if (name.trim()) setStep(2) }}
-            nextDisabled={!name.trim()}
+            onNext={() => {
+              if (!name.trim()) return
+              const digits = cardNumber.replace(/\D/g, '')
+              if (digits !== '' && !isValidCardNumber(digits)) return
+              setStep(2)
+            }}
+            nextDisabled={!name.trim() || (cardNumber.replace(/\D/g, '') !== '' && !isValidCardNumber(cardNumber.replace(/\D/g, '')))}
           >
             <div className="flex flex-col gap-4">
               <div>
@@ -264,6 +274,30 @@ export default function CoachRegisterPage() {
                   style={{ ...inputStyle, opacity: 0.6, cursor: 'not-allowed', direction: 'ltr', textAlign: 'right' }}
                 />
                 <p className="text-xs mt-1.5" style={{ color: 'var(--content-tertiary)' }}>شماره موبایل از حساب شما دریافت شده و قابل ویرایش نیست</p>
+              </div>
+              <div>
+                <label className="block text-sm mb-1.5" style={{ color: 'var(--content-secondary)' }}>
+                  💳 شماره کارت بانکی <span style={{ color: 'var(--content-tertiary)' }}>(برای دریافت پرداخت کارت‌به‌کارت)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={19}
+                  placeholder="---- ---- ---- ----"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                  className="w-full rounded-xl px-4 py-3.5 text-base outline-none tracking-wider"
+                  style={{ ...inputStyle, direction: 'ltr', textAlign: 'center', fontFamily: 'monospace' }}
+                />
+                <input
+                  type="text"
+                  placeholder="نام صاحب کارت"
+                  value={cardHolder}
+                  onChange={(e) => setCardHolder(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3.5 text-sm outline-none mt-2"
+                  style={inputStyle}
+                />
+                <p className="text-xs mt-1.5" style={{ color: 'var(--content-tertiary)' }}>می‌توانید بعداً هم از پروفایل اضافه کنید</p>
               </div>
             </div>
           </StepShell>

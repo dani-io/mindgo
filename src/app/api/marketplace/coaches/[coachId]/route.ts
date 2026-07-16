@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { maskCardNumber } from '@/lib/payments'
 
 export async function GET(
   _req: NextRequest,
@@ -40,6 +41,10 @@ export async function GET(
       videoIntroUrl: coach.videoIntroUrl,
       totalSessions: coach.totalSessions,
       avgRating:     Number(coach.avgRating),
+      // Card-to-card availability — masked for public display only.
+      hasCard:        Boolean(coach.cardNumber),
+      cardNumberMasked: maskCardNumber(coach.cardNumber),
+      cardHolderName:   coach.cardHolderName,
       specializations: coach.specializations.map((cs) => ({
         id: cs.spec.id, name: cs.spec.name, slug: cs.spec.slug, icon: cs.spec.icon,
       })),

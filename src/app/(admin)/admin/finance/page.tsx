@@ -82,7 +82,8 @@ export default function AdminFinancePage() {
     )
   }
 
-  const METHOD_LABELS: Record<string, string> = { zarinpal: 'زرین‌پال', snappay: 'اسنپ‌پی' }
+  const METHOD_LABELS: Record<string, string> = { zarinpal: 'زرین‌پال', snappay: 'اسنپ‌پی', card_to_card: 'کارت به کارت' }
+  const cardToCard = overview?.methodBreakdown.find((m) => m.method === 'card_to_card')
 
   return (
     <div>
@@ -119,6 +120,13 @@ export default function AdminFinancePage() {
               value={`${fmt(overview.totalDiscounts)} ت`}
               icon="🏷️"
               color="#F59E0B"
+            />
+            <MetricCard
+              label="کارت به کارت"
+              value={`${fmt(cardToCard?.total ?? 0)} ت`}
+              icon="💳"
+              color="#10B981"
+              sub={`${fmt(cardToCard?.count ?? 0)} تراکنش · بدون کارمزد`}
             />
           </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { computeShares } from '@/lib/payments'
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('mg_token')?.value
@@ -86,8 +87,7 @@ export async function POST(req: NextRequest) {
   }
 
   const amountFinal    = amountOriginal - discountAmount
-  const platformShare  = Math.round(amountFinal * 0.3)
-  const coachShare     = amountFinal - platformShare
+  const { platformShare, coachShare } = computeShares(amountFinal, method as 'zarinpal' | 'snappay')
 
   const payment = await prisma.payment.create({
     data: {

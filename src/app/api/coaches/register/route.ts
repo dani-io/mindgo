@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, signToken } from '@/lib/auth'
+import { isValidCardNumber } from '@/lib/payments'
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('mg_token')?.value
@@ -21,7 +22,16 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { name, short_bio, full_bio, gender_accept, specialization_ids, certificates } = body
+  const { name, short_bio, full_bio, gender_accept, specialization_ids, certificates, card_number, card_holder_name } = body
+
+  // Card number is optional at registration but must be 16 digits if provided.
+  const cardDigits = card_number ? String(card_number).replace(/\D/g, '') : ''
+  if (cardDigits !== '' && !isValidCardNumber(cardDigits)) {
+    return NextResponse.json(
+      { success: false, error: { code: 'INVALID_CARD', message: 'شماره کارت باید ۱۶ رقم باشد' } },
+      { status: 400 }
+    )
+  }
 
   // Promote role and optionally update name
   const updatedUser = await prisma.user.update({
@@ -36,6 +46,8 @@ export async function POST(req: NextRequest) {
         shortBio:     short_bio    ?? null,
         fullBio:      full_bio     ?? null,
         genderAccept: gender_accept ?? 'all',
+        cardNumber:     cardDigits || null,
+        cardHolderName: card_holder_name ? String(card_holder_name).trim() : null,
         status:       'pending',
       },
     })
