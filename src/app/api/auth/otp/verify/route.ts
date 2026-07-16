@@ -2,9 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { signToken } from '@/lib/auth'
 import { getAdminRole } from '@/lib/rbac'
+import { verifyOTP as gatewayVerifyOTP, getProviderName } from '@/lib/services/sms.service'
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\s+/g, '').replace(/^(\+98|0098)/, '0')
+}
+
+function getTestPhones(): string[] {
+  return (process.env.TEST_PHONES ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+}
+
+// Verify against our own OTP DB (used for test phones + kavenegar/smsir).
+async function verifyViaDb(phone: string, code: string): Promise<boolean> {
+  const otp = await prisma.otpCode.findFirst({
+    where: {
+      phone,
+      code,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  if (!otp) return false
+
+  await prisma.otpCode.update({
+    where: { id: otp.id },
+    data: { used: true },
+  })
+  return true
 }
 
 export async function POST(req: NextRequest) {
@@ -28,29 +57,22 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Find latest unused, unexpired OTP for this phone
-  const otp = await prisma.otpCode.findFirst({
-    where: {
-      phone,
-      code,
-      used: false,
-      expiresAt: { gt: new Date() },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+  const provider = getProviderName()
+  const isTestPhone = getTestPhones().includes(phone)
 
-  if (!otp) {
+  // Self-hosted gateway verifies its own codes. Test phones always go through
+  // our DB (their code was stored locally, not at the gateway).
+  const useGateway = provider === 'selfhosted' && !isTestPhone
+  const verified = useGateway
+    ? await gatewayVerifyOTP(phone, code)
+    : await verifyViaDb(phone, code)
+
+  if (!verified) {
     return NextResponse.json(
       { success: false, error: { code: 'INVALID_CODE', message: 'کد وارد شده اشتباه یا منقضی شده است' } },
       { status: 401 }
     )
   }
-
-  // Mark OTP as used
-  await prisma.otpCode.update({
-    where: { id: otp.id },
-    data: { used: true },
-  })
 
   // Upsert user
   let user = await prisma.user.findUnique({ where: { phone } })

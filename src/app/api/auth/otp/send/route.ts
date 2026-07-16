@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendOTP } from '@/lib/services/sms.service'
+import { sendOTP, getProviderName } from '@/lib/services/sms.service'
 
 const OTP_TTL_SECONDS = 120
+const SELFHOSTED_OTP_TTL_SECONDS = 300 // gateway-managed codes live longer
+const TEST_OTP_CODE = '12345'
 const RATE_LIMIT_WINDOW_MINUTES = 10
 const RATE_LIMIT_MAX = 3
 
@@ -16,6 +18,13 @@ function normalizePhone(phone: string): string {
 
 function isValidIranPhone(phone: string): boolean {
   return /^09[0-9]{9}$/.test(phone)
+}
+
+function getTestPhones(): string[] {
+  return (process.env.TEST_PHONES ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
 }
 
 export async function POST(req: NextRequest) {
@@ -38,13 +47,49 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Rate limiting: max 3 OTPs per 10 minutes
+  const provider = getProviderName()
+  const isTestPhone = getTestPhones().includes(phone)
+
+  // ── Test phones: fixed code, saved to our DB, returned in response, no SMS ──
+  if (isTestPhone) {
+    const code = TEST_OTP_CODE
+    const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000)
+    await prisma.otpCode.create({ data: { phone, code, expiresAt } })
+    console.log(`[OTP] (test) phone=${phone} code=${code}`)
+
+    return NextResponse.json({
+      success: true,
+      data: { expires_in: OTP_TTL_SECONDS },
+      message: 'کد تأیید ارسال شد',
+      code,
+    })
+  }
+
+  // ── Self-hosted gateway: it generates, stores & verifies its own code ──────
+  // We don't persist anything to our DB; the gateway owns rate limiting too.
+  if (provider === 'selfhosted') {
+    try {
+      const sent = await sendOTP(phone) // no code — gateway generates it
+      if (!sent) {
+        console.error(`[OTP] selfhosted gateway send failed for phone=${phone}`)
+      }
+    } catch (err) {
+      console.error(`[OTP] selfhosted gateway send threw for phone=${phone}:`, err)
+    }
+
+    // SMS failures must not block login — always return success.
+    return NextResponse.json({
+      success: true,
+      data: { expires_in: SELFHOSTED_OTP_TTL_SECONDS },
+      message: 'کد تأیید ارسال شد',
+    })
+  }
+
+  // ── DB-backed providers (kavenegar / smsir): we generate & store the code ──
+  // Rate limiting: max 3 OTPs per 10 minutes.
   const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000)
   const recentCount = await prisma.otpCode.count({
-    where: {
-      phone,
-      createdAt: { gte: windowStart },
-    },
+    where: { phone, createdAt: { gte: windowStart } },
   })
 
   if (recentCount >= RATE_LIMIT_MAX) {
@@ -62,22 +107,11 @@ export async function POST(req: NextRequest) {
 
   const code = generateOtp()
   const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000)
-
-  await prisma.otpCode.create({
-    data: { phone, code, expiresAt },
-  })
-
+  await prisma.otpCode.create({ data: { phone, code, expiresAt } })
   console.log(`[OTP] phone=${phone} code=${code} expires=${expiresAt.toISOString()}`)
 
-  const testPhones = (process.env.TEST_PHONES ?? '')
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)
-  const isTestMode = process.env.NODE_ENV !== 'production' || testPhones.includes(phone)
-
-  // Send the real SMS whenever a provider is configured. SMS failures must not
-  // block login — we log and still return success.
-  const smsProviderConfigured = (process.env.SMS_PROVIDER ?? '').trim() !== ''
+  const isDev = process.env.NODE_ENV !== 'production'
+  const smsProviderConfigured = provider !== ''
   if (smsProviderConfigured) {
     try {
       const sent = await sendOTP(phone, code)
@@ -93,6 +127,7 @@ export async function POST(req: NextRequest) {
     success: true,
     data: { expires_in: OTP_TTL_SECONDS },
     message: 'کد تأیید ارسال شد',
-    ...(isTestMode ? { code } : {}),
+    // Expose the code in dev so you can log in without a real SMS.
+    ...(isDev ? { code } : {}),
   })
 }
