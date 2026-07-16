@@ -101,7 +101,15 @@ export default function LoginPage() {
       // Cookie is already set by the verify API response (for middleware).
       // Use window.location.href (full navigation) so the browser sends
       // the fresh cookie on the next request and middleware can read it.
-      const dest = data.data.user.role === 'rahbalad' ? '/coach-dashboard' : '/dashboard'
+      const u = data.data.user
+      let dest: string
+      if (u.role === 'rahbalad') {
+        dest = '/coach-dashboard'
+      } else if (!u.onboardingCompleted) {
+        dest = '/onboarding'  // first-time rehjoo → wizard
+      } else {
+        dest = '/dashboard'
+      }
       window.location.href = dest
     } catch (err) {
       console.error('[verify] network error:', err)

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
     take:    30,
     include: {
-      user:      { select: { name: true } },
+      user:      { select: { name: true, isPrivateProfile: true } },
       reactions: { select: { userId: true, type: true } },
     },
   })
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
       template:      p.template,
       content:       p.content,
       isAnonymous:   p.isAnonymous,
-      authorName:    p.isAnonymous ? 'یک هم‌سفر' : (p.user.name ?? 'رهجو'),
+      authorName:    (p.isAnonymous || p.user.isPrivateProfile) ? 'یک هم‌سفر' : (p.user.name ?? 'رهجو'),
       reactionCount: p.reactionCount,
       reactions:     counts,
       myReaction,
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       content:     body.content.trim(),
       isAnonymous: body.isAnonymous ?? false,
     },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { name: true, isPrivateProfile: true } } },
   })
 
   return Response.json({
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       template:      post.template,
       content:       post.content,
       isAnonymous:   post.isAnonymous,
-      authorName:    post.isAnonymous ? 'یک هم‌سفر' : (post.user.name ?? 'رهجو'),
+      authorName:    (post.isAnonymous || post.user.isPrivateProfile) ? 'یک هم‌سفر' : (post.user.name ?? 'رهجو'),
       reactionCount: 0,
       reactions:     { strong: 0, growing: 0, love: 0, fire: 0 },
       myReaction:    null,

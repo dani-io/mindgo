@@ -92,10 +92,13 @@ export async function POST(req: NextRequest) {
   // Check if this user also has admin access (independent of user.role)
   const adminRole = await getAdminRole(user.id)
 
-  const tokenPayload: { sub: string; phone: string; role: string; adminRole?: string } = {
+  const tokenPayload: {
+    sub: string; phone: string; role: string; adminRole?: string; onboardingCompleted: boolean
+  } = {
     sub:   user.id,
     phone: user.phone,
     role:  user.role,
+    onboardingCompleted: user.onboardingCompleted,
   }
   if (adminRole) tokenPayload.adminRole = adminRole
 
@@ -110,6 +113,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
         is_new: isNew,
+        onboardingCompleted: user.onboardingCompleted,
       },
       expires_in: 86400,
     },

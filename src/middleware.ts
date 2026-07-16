@@ -43,6 +43,17 @@ export async function middleware(req: NextRequest) {
   }
   console.log(`[middleware] authed uid=${payload.sub} role=${payload.role}`)
 
+  // First-time rehjoo users must complete onboarding before accessing the app.
+  // Coaches (rahbalad) and admins have their own flows and are exempt. Tokens
+  // issued before this feature lack the claim (undefined) and are not forced.
+  if (
+    payload.role === 'rehjoo' &&
+    !payload.adminRole &&
+    payload.onboardingCompleted === false
+  ) {
+    return NextResponse.redirect(new URL('/onboarding', req.url))
+  }
+
   const isCoachPath =
     pathname.startsWith('/coach-dashboard') ||
     pathname.startsWith('/coach-availability') ||

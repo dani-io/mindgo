@@ -29,7 +29,12 @@ export default function SettingsPage() {
   const [phone,        setPhone]        = useState('')
   const [notifStreak,  setNotifStreak]  = useState(true)
   const [notifSession, setNotifSession] = useState(true)
-  const [privateMode,  setPrivateMode]  = useState(false)
+
+  // Privacy settings (loaded from /api/users/me)
+  const [isPrivateProfile,    setIsPrivateProfile]    = useState(false)
+  const [hideFromLeaderboard, setHideFromLeaderboard] = useState(false)
+  const [shareWithCoach,      setShareWithCoach]      = useState(true)
+  const [privacyLoaded,       setPrivacyLoaded]       = useState(false)
 
   useEffect(() => {
     const saved = (localStorage.getItem('mg_theme') ?? 'auto') as ThemeMode
@@ -42,7 +47,36 @@ export default function SettingsPage() {
         if (p.phone) setPhone(p.phone)
       } catch { /* ignore */ }
     }
+
+    // Load current privacy settings
+    fetch('/api/users/me', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) {
+          setIsPrivateProfile(json.data.isPrivateProfile)
+          setHideFromLeaderboard(json.data.hideFromLeaderboard)
+          setShareWithCoach(json.data.shareWithCoach)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPrivacyLoaded(true))
   }, [])
+
+  // Optimistically flip a privacy toggle and persist it. Reverts on failure.
+  function savePrivacy(
+    patch: Partial<{ isPrivateProfile: boolean; hideFromLeaderboard: boolean; shareWithCoach: boolean }>,
+    revert: () => void,
+  ) {
+    const token = localStorage.getItem('mg_token')
+    fetch('/api/users/me', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body:    JSON.stringify(patch),
+    })
+      .then((r) => r.json())
+      .then((json) => { if (!json.success) revert() })
+      .catch(() => revert())
+  }
 
   function selectTheme(mode: ThemeMode) {
     setTheme(mode)
@@ -159,31 +193,64 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Privacy (placeholder) */}
+      {/* Privacy */}
       <div className="mb-5">
         <p className="text-xs font-semibold mb-3 px-1" style={{ color: 'var(--content-secondary)' }}>
           حریم خصوصی
         </p>
         <div
           className="rounded-2xl overflow-hidden"
-          style={{ border: '1px solid var(--border-color)' }}
+          style={{ border: '1px solid var(--border-color)', opacity: privacyLoaded ? 1 : 0.5 }}
         >
-          <div className="flex items-center justify-between p-4" style={{ background: 'var(--surface-card)' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--content-primary)' }}>پروفایل خصوصی</p>
-              <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>فعلاً در حالت توسعه</p>
-            </div>
-            <button
-              onClick={() => setPrivateMode(!privateMode)}
-              className="w-11 h-6 rounded-full relative transition-all flex-shrink-0"
-              style={{ background: privateMode ? '#10B981' : 'var(--surface-secondary)' }}
+          {[
+            {
+              key:   'isPrivateProfile',
+              label: 'پروفایل خصوصی',
+              desc:  'نامت به‌جای نمایش، «یک هم‌سفر» دیده می‌شود',
+              value: isPrivateProfile,
+              on:    () => { const v = !isPrivateProfile; setIsPrivateProfile(v); savePrivacy({ isPrivateProfile: v }, () => setIsPrivateProfile(!v)) },
+            },
+            {
+              key:   'hideFromLeaderboard',
+              label: 'نمایش فعالیت‌ها',
+              desc:  'مخفی‌شدن از جدول‌های امتیاز و فهرست شرکت‌کنندگان چالش‌ها',
+              value: hideFromLeaderboard,
+              on:    () => { const v = !hideFromLeaderboard; setHideFromLeaderboard(v); savePrivacy({ hideFromLeaderboard: v }, () => setHideFromLeaderboard(!v)) },
+            },
+            {
+              key:   'shareWithCoach',
+              label: 'اشتراک با کوچ',
+              desc:  'کوچت می‌تواند تاریخچه حال، عادت‌ها و دفترچه را ببیند',
+              value: shareWithCoach,
+              on:    () => { const v = !shareWithCoach; setShareWithCoach(v); savePrivacy({ shareWithCoach: v }, () => setShareWithCoach(!v)) },
+            },
+          ].map((item, i, arr) => (
+            <div
+              key={item.key}
+              className="flex items-center justify-between p-4 gap-3"
+              style={{
+                background:   'var(--surface-card)',
+                borderBottom: i < arr.length - 1 ? '1px solid var(--border-color)' : 'none',
+              }}
             >
-              <div
-                className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
-                style={{ right: privateMode ? '2px' : 'auto', left: privateMode ? 'auto' : '2px' }}
-              />
-            </button>
-          </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: 'var(--content-primary)' }}>{item.label}</p>
+                <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>{item.desc}</p>
+              </div>
+              <button
+                onClick={item.on}
+                disabled={!privacyLoaded}
+                aria-label={item.label}
+                className="w-11 h-6 rounded-full relative transition-all flex-shrink-0"
+                style={{ background: item.value ? '#10B981' : 'var(--surface-secondary)' }}
+              >
+                <div
+                  className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
+                  style={{ right: item.value ? '2px' : 'auto', left: item.value ? 'auto' : '2px' }}
+                />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

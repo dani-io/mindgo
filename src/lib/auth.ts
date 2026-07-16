@@ -9,6 +9,7 @@ export interface JWTPayload {
   phone:     string
   role:      string    // UserRole: rehjoo | rahbalad | admin (legacy — kept for coach routing)
   adminRole?: string   // AdminRoleType: super_admin | support_manager | support_agent | undefined
+  onboardingCompleted?: boolean // false → first-time user, route to /onboarding
   iat?: number
   exp?: number
 }
