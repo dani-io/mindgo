@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { formatCardNumber, isValidCardNumber } from '@/lib/payments'
 
 interface CoachProfile {
   name:           string
   shortBio:       string | null
   fullBio:        string | null
   genderAccept:   'all' | 'female_only' | 'male_only'
-  cardNumber:     string | null
-  cardHolderName: string | null
   specializations: { id: string; name: string; icon: string | null }[]
 }
 
@@ -28,8 +25,6 @@ export default function CoachProfilePage() {
   const [shortBio,  setShortBio]  = useState('')
   const [fullBio,   setFullBio]   = useState('')
   const [gender,    setGender]    = useState<'all' | 'female_only' | 'male_only'>('all')
-  const [cardNumber, setCardNumber] = useState('')
-  const [cardHolder, setCardHolder] = useState('')
   const [loading,   setLoading]   = useState(true)
   const [saving,    setSaving]    = useState(false)
   const [saved,     setSaved]     = useState(false)
@@ -47,19 +42,12 @@ export default function CoachProfilePage() {
           setShortBio(d.shortBio ?? '')
           setFullBio(d.fullBio ?? '')
           setGender(d.genderAccept ?? 'all')
-          setCardNumber(d.cardNumber ? formatCardNumber(d.cardNumber) : '')
-          setCardHolder(d.cardHolderName ?? '')
         }
       })
       .finally(() => setLoading(false))
   }, [])
 
   async function handleSave() {
-    const cardDigits = cardNumber.replace(/\D/g, '')
-    if (cardDigits !== '' && !isValidCardNumber(cardDigits)) {
-      setError('شماره کارت باید ۱۶ رقم باشد')
-      return
-    }
     setSaving(true)
     setError(null)
     setSaved(false)
@@ -67,10 +55,7 @@ export default function CoachProfilePage() {
     const res = await fetch('/api/coaches/me', {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        name, short_bio: shortBio, full_bio: fullBio, gender_accept: gender,
-        card_number: cardDigits, card_holder_name: cardHolder,
-      }),
+      body: JSON.stringify({ name, short_bio: shortBio, full_bio: fullBio, gender_accept: gender }),
     })
     const json = await res.json()
     setSaving(false)
@@ -208,43 +193,26 @@ export default function CoachProfilePage() {
         </div>
       </section>
 
-      {/* Bank card (for card-to-card payments) */}
-      <section
-        className="rounded-xl p-4 space-y-3"
+      {/* Bank info moved to wallet */}
+      <button
+        onClick={() => router.push('/coach-wallet')}
+        className="w-full rounded-xl p-4 flex items-center gap-3 text-right transition-all active:scale-[0.99]"
         style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
       >
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--content-secondary)' }}>💳 شماره کارت بانکی</h2>
-        <p className="text-xs" style={{ color: 'var(--content-tertiary)' }}>
-          برای دریافت پرداخت کارت‌به‌کارت از رهجوها. مبلغ مستقیماً به این کارت واریز می‌شود.
-        </p>
-        <input
-          value={cardNumber}
-          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-          placeholder="---- ---- ---- ----"
-          inputMode="numeric"
-          maxLength={19}
-          className="w-full rounded-xl px-4 py-3 text-base outline-none tracking-wider"
-          style={{
-            background: 'var(--surface-secondary)',
-            border:     '1px solid var(--border-color)',
-            color:      'var(--content-primary)',
-            direction:  'ltr',
-            textAlign:  'center',
-            fontFamily: 'monospace',
-          }}
-        />
-        <input
-          value={cardHolder}
-          onChange={(e) => setCardHolder(e.target.value)}
-          placeholder="نام صاحب کارت"
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{
-            background: 'var(--surface-secondary)',
-            border:     '1px solid var(--border-color)',
-            color:      'var(--content-primary)',
-          }}
-        />
-      </section>
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+          style={{ background: 'rgba(16,185,129,0.12)' }}
+        >
+          💳
+        </div>
+        <div className="flex-1 text-right">
+          <p className="text-sm font-semibold" style={{ color: 'var(--content-primary)' }}>اطلاعات بانکی</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--content-tertiary)' }}>
+            شماره کارت و شبا را در کیف پول مدیریت کنید
+          </p>
+        </div>
+        <span style={{ color: '#10B981' }}>کیف پول ›</span>
+      </button>
 
       {/* Specializations (read-only display) */}
       {profile?.specializations && profile.specializations.length > 0 && (

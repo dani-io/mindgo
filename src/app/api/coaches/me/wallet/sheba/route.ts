@@ -21,11 +21,18 @@ export async function PATCH(req: NextRequest) {
     )
   }
 
-  await prisma.wallet.update({
-    where: { coachId: coach.id },
-    data: {
+  // Upsert so it works even if the coach has no wallet row yet (older coaches
+  // that predate wallet auto-creation on registration).
+  await prisma.wallet.upsert({
+    where:  { coachId: coach.id },
+    update: {
       ...(sheba_number    !== undefined ? { shebaNumber:    sheba_number }    : {}),
       ...(account_holder  !== undefined ? { accountHolder:  account_holder }  : {}),
+    },
+    create: {
+      coachId:       coach.id,
+      shebaNumber:   sheba_number   ?? null,
+      accountHolder: account_holder ?? null,
     },
   })
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { formatCardNumber } from '@/lib/payments'
+import { formatCardNumber, isValidCardNumber } from '@/lib/payments'
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -113,10 +113,12 @@ function BalanceCard({
 export default function CoachWalletPage() {
   const [wallet,       setWallet]       = useState<WalletData | null>(null)
   const [loading,      setLoading]      = useState(true)
+  const [cardInput,    setCardInput]    = useState('')
+  const [cardHolderInput, setCardHolderInput] = useState('')
   const [shebaInput,   setShebaInput]   = useState('')
   const [holderInput,  setHolderInput]  = useState('')
-  const [savingSheba,  setSavingSheba]  = useState(false)
-  const [shebaMsg,     setShebaMsg]     = useState<string | null>(null)
+  const [savingBank,   setSavingBank]   = useState(false)
+  const [bankMsg,      setBankMsg]      = useState<string | null>(null)
   const [payoutAmount, setPayoutAmount] = useState('')
   const [payoutLoading, setPayoutLoading] = useState(false)
   const [payoutMsg,    setPayoutMsg]    = useState<{ text: string; ok: boolean } | null>(null)
@@ -129,6 +131,8 @@ export default function CoachWalletPage() {
       const json = await res.json()
       if (json.success) {
         setWallet(json.data)
+        setCardInput(json.data.cardNumber ? formatCardNumber(json.data.cardNumber) : '')
+        setCardHolderInput(json.data.cardHolderName ?? '')
         setShebaInput(json.data.shebaNumber  ?? '')
         setHolderInput(json.data.accountHolder ?? '')
       }
@@ -163,22 +167,39 @@ export default function CoachWalletPage() {
     }
   }
 
-  async function handleSaveSheba() {
-    setSavingSheba(true)
-    setShebaMsg(null)
+  // Saves both the card (via /api/coaches/me) and the SHEBA (via wallet/sheba)
+  // in one action. Both endpoints stay unchanged; we just call them together.
+  async function handleSaveBank() {
+    const cardDigits = cardInput.replace(/\D/g, '')
+    if (cardDigits !== '' && !isValidCardNumber(cardDigits)) {
+      setBankMsg('شماره کارت باید ۱۶ رقم باشد')
+      return
+    }
+    setSavingBank(true)
+    setBankMsg(null)
     try {
-      const res  = await fetch('/api/coaches/me/wallet/sheba', {
-        method:  'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sheba_number: shebaInput.trim(), account_holder: holderInput.trim() }),
-      })
-      const json = await res.json()
-      setShebaMsg(json.success ? '✓ اطلاعات حساب ذخیره شد' : (json.error?.message ?? 'خطایی رخ داد'))
-      if (json.success) loadWallet()
+      const [cardRes, shebaRes] = await Promise.all([
+        fetch('/api/coaches/me', {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ card_number: cardDigits, card_holder_name: cardHolderInput.trim() }),
+        }).then((r) => r.json()),
+        fetch('/api/coaches/me/wallet/sheba', {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheba_number: shebaInput.trim(), account_holder: holderInput.trim() }),
+        }).then((r) => r.json()),
+      ])
+      if (cardRes.success && shebaRes.success) {
+        setBankMsg('✓ اطلاعات بانکی ذخیره شد')
+        loadWallet()
+      } else {
+        setBankMsg(cardRes.error?.message ?? shebaRes.error?.message ?? 'خطایی رخ داد')
+      }
     } catch {
-      setShebaMsg('خطا در ارتباط با سرور')
+      setBankMsg('خطا در ارتباط با سرور')
     } finally {
-      setSavingSheba(false)
+      setSavingBank(false)
     }
   }
 
@@ -345,39 +366,52 @@ export default function CoachWalletPage() {
         </div>
       </section>
 
-      {/* Sheba number */}
+      {/* Bank info — card (for card-to-card) + SHEBA (for payouts) together */}
       <section className="mb-6">
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--content-secondary)' }}>
-          🏦 اطلاعات حساب بانکی
+          💳 اطلاعات بانکی
         </h2>
         <div
           className="rounded-xl p-4"
           style={{ background: 'var(--surface-card)', border: '1px solid var(--border-color)' }}
         >
-          {/* Card number (used for card-to-card payments; edit in profile) */}
-          <div className="mb-3 pb-3" style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>💳 شماره کارت (کارت‌به‌کارت)</label>
-            {wallet.cardNumber ? (
-              <>
-                <p className="text-sm font-semibold" style={{ color: 'var(--content-primary)', direction: 'ltr', textAlign: 'left', fontFamily: 'monospace' }}>
-                  {toPersian(formatCardNumber(wallet.cardNumber))}
-                </p>
-                {wallet.cardHolderName && (
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--content-tertiary)' }}>{wallet.cardHolderName}</p>
-                )}
-              </>
-            ) : (
-              <p className="text-xs" style={{ color: '#F59E0B' }}>ثبت نشده — از «ویرایش پروفایل» اضافه کنید</p>
-            )}
-          </div>
           <div className="flex flex-col gap-3">
+            {/* Card — used for card-to-card payments from رهجوها */}
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>شماره شبا (IR + ۲۴ رقم)</label>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>شماره کارت (برای دریافت کارت‌به‌کارت)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={19}
+                placeholder="---- ---- ---- ----"
+                value={cardInput}
+                onChange={(e) => { setCardInput(formatCardNumber(e.target.value)); setBankMsg(null) }}
+                className="w-full rounded-xl px-4 py-3 text-base outline-none tracking-wider"
+                style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-color)', color: 'var(--content-primary)', direction: 'ltr', textAlign: 'center', fontFamily: 'monospace' }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>نام صاحب کارت</label>
+              <input
+                type="text"
+                placeholder="نام کامل به فارسی"
+                value={cardHolderInput}
+                onChange={(e) => { setCardHolderInput(e.target.value); setBankMsg(null) }}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-color)', color: 'var(--content-primary)' }}
+              />
+            </div>
+
+            <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }} />
+
+            {/* SHEBA — used for platform payouts */}
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--content-tertiary)' }}>شماره شبا (IR + ۲۴ رقم) — برای تسویه</label>
               <input
                 type="text"
                 placeholder="IR000000000000000000000000"
                 value={shebaInput}
-                onChange={(e) => { setShebaInput(e.target.value.toUpperCase()); setShebaMsg(null) }}
+                onChange={(e) => { setShebaInput(e.target.value.toUpperCase()); setBankMsg(null) }}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none"
                 style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-color)', color: 'var(--content-primary)', direction: 'ltr', textAlign: 'left' }}
               />
@@ -388,22 +422,23 @@ export default function CoachWalletPage() {
                 type="text"
                 placeholder="نام کامل به فارسی"
                 value={holderInput}
-                onChange={(e) => { setHolderInput(e.target.value); setShebaMsg(null) }}
+                onChange={(e) => { setHolderInput(e.target.value); setBankMsg(null) }}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none"
                 style={{ background: 'var(--surface-secondary)', border: '1px solid var(--border-color)', color: 'var(--content-primary)' }}
               />
             </div>
+
             <button
-              onClick={handleSaveSheba}
-              disabled={savingSheba}
+              onClick={handleSaveBank}
+              disabled={savingBank}
               className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
-              style={{ background: '#10B981' }}
+              style={{ background: '#10B981', opacity: savingBank ? 0.7 : 1 }}
             >
-              {savingSheba ? 'در حال ذخیره...' : 'ذخیره اطلاعات حساب'}
+              {savingBank ? 'در حال ذخیره...' : 'ذخیره اطلاعات بانکی'}
             </button>
-            {shebaMsg && (
-              <p className="text-xs text-center" style={{ color: shebaMsg.startsWith('✓') ? '#10B981' : '#EF4444' }}>
-                {shebaMsg}
+            {bankMsg && (
+              <p className="text-xs text-center" style={{ color: bankMsg.startsWith('✓') ? '#10B981' : '#EF4444' }}>
+                {bankMsg}
               </p>
             )}
           </div>
