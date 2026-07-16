@@ -9,7 +9,7 @@ export default function LoginPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState(['', '', '', '', ''])
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(0)
@@ -55,8 +55,8 @@ export default function LoginPage() {
       setCountdown(data.data.expires_in ?? 120)
       if (data.code) {
         setTestCode(data.code)
-        const digits = String(data.code).split('').slice(0, 5)
-        const filled = ['', '', '', '', ''].map((_, i) => digits[i] ?? '')
+        const digits = String(data.code).split('').slice(0, 6)
+        const filled = ['', '', '', '', '', ''].map((_, i) => digits[i] ?? '')
         setOtp(filled)
         if (filled.every((d) => d !== '')) {
           setTimeout(() => handleVerifyOtp(filled.join('')), 300)
@@ -75,7 +75,7 @@ export default function LoginPage() {
   async function handleVerifyOtp(codeArg?: string) {
     const code = codeArg ?? otp.join('')
     console.log('[verify] code:', code, '| phone:', phone.replace(/\D/g, ''))
-    if (code.length !== 5) { console.log('[verify] skipped — code not 5 digits'); return }
+    if (code.length !== 6) { console.log('[verify] skipped — code not 6 digits'); return }
     if (loading) { console.log('[verify] skipped — already loading'); return }
     setError('')
     setLoading(true)
@@ -91,7 +91,7 @@ export default function LoginPage() {
       console.log('[verify] ← status:', res.status, 'data:', data)
       if (!res.ok) {
         setError(data.error?.message ?? 'کد اشتباه است')
-        setOtp(['', '', '', '', ''])
+        setOtp(['', '', '', '', '', ''])
         otpRefs.current[0]?.focus()
         return
       }
@@ -116,7 +116,7 @@ export default function LoginPage() {
     const next = [...otp]
     next[index] = digit
     setOtp(next)
-    if (digit && index < 4) otpRefs.current[index + 1]?.focus()
+    if (digit && index < 5) otpRefs.current[index + 1]?.focus()
     if (next.every((d) => d !== '')) {
       // Pass next.join('') explicitly — do NOT rely on otp state here (stale closure)
       setTimeout(() => handleVerifyOtp(next.join('')), 50)
@@ -131,11 +131,11 @@ export default function LoginPage() {
 
   function handleOtpPaste(e: React.ClipboardEvent) {
     e.preventDefault()
-    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 5)
-    const next = ['', '', '', '', '']
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const next = ['', '', '', '', '', '']
     text.split('').forEach((d, i) => { next[i] = d })
     setOtp(next)
-    if (text.length === 5) setTimeout(() => handleVerifyOtp(text), 50)
+    if (text.length === 6) setTimeout(() => handleVerifyOtp(text), 50)
     else otpRefs.current[text.length]?.focus()
   }
 
@@ -241,7 +241,7 @@ export default function LoginPage() {
                 کد تأیید را وارد کنید
               </h1>
               <p className="text-sm mb-1" style={{ color: 'var(--content-secondary)' }}>
-                کد ۵ رقمی ارسال‌شده به{' '}
+                کد ۶ رقمی ارسال‌شده به{' '}
                 <span dir="ltr" style={{ fontFamily: 'monospace' }}>
                   {phone}
                 </span>
@@ -261,7 +261,7 @@ export default function LoginPage() {
 
               {/* OTP boxes */}
               <div
-                className="flex gap-3 justify-center my-6"
+                className="flex gap-2 justify-center my-6"
                 dir="ltr"
                 onPaste={handleOtpPaste}
               >
@@ -275,7 +275,7 @@ export default function LoginPage() {
                     value={digit}
                     onChange={(e) => handleOtpInput(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-xl font-bold rounded-md outline-none transition-all"
+                    className="w-11 h-14 text-center text-xl font-bold rounded-md outline-none transition-all"
                     style={{
                       background: 'var(--surface-secondary)',
                       color: 'var(--content-primary)',
@@ -325,7 +325,7 @@ export default function LoginPage() {
                 ) : (
                   <button
                     onClick={() => {
-                      setOtp(['', '', '', '', ''])
+                      setOtp(['', '', '', '', '', ''])
                       setError('')
                       setStep('phone')
                     }}
@@ -337,7 +337,7 @@ export default function LoginPage() {
               </div>
 
               <button
-                onClick={() => { setStep('phone'); setError(''); setOtp(['', '', '', '', '']) }}
+                onClick={() => { setStep('phone'); setError(''); setOtp(['', '', '', '', '', '']) }}
                 className="w-full mt-2 text-sm text-center"
                 style={{ color: 'var(--content-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}
               >

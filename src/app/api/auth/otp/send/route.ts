@@ -4,12 +4,12 @@ import { sendOTP, getProviderName } from '@/lib/services/sms.service'
 
 const OTP_TTL_SECONDS = 120
 const SELFHOSTED_OTP_TTL_SECONDS = 300 // gateway-managed codes live longer
-const TEST_OTP_CODE = '12345'
+const TEST_OTP_CODE = '123456'
 const RATE_LIMIT_WINDOW_MINUTES = 10
 const RATE_LIMIT_MAX = 3
 
 function generateOtp(): string {
-  return String(Math.floor(10000 + Math.random() * 90000))
+  return String(Math.floor(100000 + Math.random() * 900000))
 }
 
 function normalizePhone(phone: string): string {

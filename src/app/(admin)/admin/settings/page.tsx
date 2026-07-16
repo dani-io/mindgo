@@ -174,7 +174,7 @@ export default function AdminSettingsPage() {
             <label style={labelStyle}>طول کد OTP</label>
             <input
               type="number" min={4} max={8} value={config.otpCodeLength} style={inputStyle}
-              onChange={(e) => set('otpCodeLength', parseInt(e.target.value) || 5)}
+              onChange={(e) => set('otpCodeLength', parseInt(e.target.value) || 6)}
             />
           </div>
         </div>

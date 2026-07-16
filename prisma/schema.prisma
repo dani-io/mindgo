@@ -91,7 +91,7 @@ model AdminRole {
 model OtpCode {
   id        String   @id @default(uuid())
   phone     String   @db.VarChar(15)
-  code      String   @db.VarChar(5)
+  code      String   @db.VarChar(6)
   expiresAt DateTime @map("expires_at")
   used      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")

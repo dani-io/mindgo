@@ -10,7 +10,7 @@ const DEFAULTS = {
   maxAdvanceBookingDays:    30,
   otpExpiryMinutes:         2,
   maxOtpAttempts:           3,
-  otpCodeLength:            5,
+  otpCodeLength:            6,
   maxActiveChallenges:      10,
   allowAnonymousPosts:      true,
   allowAnonymousChallenges: true,
