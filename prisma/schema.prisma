@@ -70,6 +70,7 @@ model User {
   partnerships1        Partnership[]           @relation("partner1")
   partnerships2        Partnership[]           @relation("partner2")
   partnerCheckins      PartnerCheckin[]
+  feedbacks            Feedback[]
 
   @@map("users")
 }
@@ -888,4 +889,39 @@ model PlatformSettings {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("platform_settings")
+}
+
+// ═══════════════════════════════════════
+// Feedback (bug reports / suggestions / comments)
+// ═══════════════════════════════════════
+
+enum FeedbackType {
+  bug
+  suggestion
+  comment
+}
+
+enum FeedbackStatus {
+  new
+  reviewed
+  resolved
+}
+
+model Feedback {
+  id            String         @id @default(uuid())
+  userId        String?        @map("user_id")
+  type          FeedbackType
+  content       String
+  screenshotUrl String?        @map("screenshot_url")
+  pageUrl       String?        @map("page_url") @db.VarChar(500)
+  isAnonymous   Boolean        @default(false) @map("is_anonymous")
+  status        FeedbackStatus @default(new)
+  adminNotes    String?        @map("admin_notes")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@map("feedback")
 }

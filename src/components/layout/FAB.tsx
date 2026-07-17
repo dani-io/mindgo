@@ -113,6 +113,27 @@ export default function FAB() {
               </p>
             </div>
           </button>
+
+          {/* Feedback option */}
+          <button
+            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-right"
+            style={{
+              background: 'var(--surface-card)',
+              border:     '1px solid var(--border-color)',
+              boxShadow:  '0 4px 16px rgba(0,0,0,0.15)',
+              color:      'var(--content-primary)',
+              direction:  'rtl',
+            }}
+            onClick={() => { setOpen(false); router.push('/feedback') }}
+          >
+            <span className="text-base">📝</span>
+            <div className="text-right">
+              <p>ارسال بازخورد</p>
+              <p className="text-[10px] font-normal mt-0.5" style={{ color: 'var(--content-tertiary)' }}>
+                باگ، پیشنهاد یا نظر
+              </p>
+            </div>
+          </button>
         </div>
       )}
 

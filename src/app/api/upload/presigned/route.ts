@@ -11,6 +11,8 @@ const FOLDER_LIMITS: Record<string, { maxSize: number }> = {
   meditations:       { maxSize: 50 * 1024 * 1024 },
   'chat-attachments':{ maxSize: 10 * 1024 * 1024 },
   exercises:         { maxSize: 10 * 1024 * 1024 },
+  receipts:          { maxSize: 5  * 1024 * 1024 },
+  feedback:          { maxSize: 5  * 1024 * 1024 },
 }
 
 function getToken(req: NextRequest): string | null {

@@ -24,12 +24,20 @@ export async function GET(req: NextRequest) {
       hideFromLeaderboard: true,
       shareWithCoach: true,
       onboardingCompleted: true,
+      onboardingAnswers: true,
     },
   })
 
   if (!user) return Response.json({ success: false, error: { message: 'کاربر یافت نشد' } }, { status: 404 })
 
-  return Response.json({ success: true, data: user })
+  // Surface maritalStatus (stored in onboardingAnswers) as a top-level field.
+  const answers = (user.onboardingAnswers ?? {}) as Record<string, unknown>
+  const { onboardingAnswers, ...rest } = user
+  void onboardingAnswers
+  return Response.json({
+    success: true,
+    data: { ...rest, maritalStatus: (answers.maritalStatus as string | null) ?? null },
+  })
 }
 
 // PATCH /api/users/me — update profile fields and/or privacy settings
@@ -40,6 +48,7 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({})) as {
     name?:                string
     avatarUrl?:           string
+    maritalStatus?:       string
     isPrivateProfile?:    boolean
     hideFromLeaderboard?: boolean
     shareWithCoach?:      boolean
@@ -52,6 +61,14 @@ export async function PATCH(req: NextRequest) {
   if (typeof body.hideFromLeaderboard === 'boolean') data.hideFromLeaderboard = body.hideFromLeaderboard
   if (typeof body.shareWithCoach === 'boolean')     data.shareWithCoach      = body.shareWithCoach
 
+  // maritalStatus lives inside onboardingAnswers (used for wheel-of-life
+  // personalization). Merge it in without clobbering the other answers.
+  if (body.maritalStatus !== undefined && ['single', 'married'].includes(body.maritalStatus)) {
+    const current = await prisma.user.findUnique({ where: { id: payload.sub }, select: { onboardingAnswers: true } })
+    const answers = (current?.onboardingAnswers ?? {}) as Record<string, unknown>
+    data.onboardingAnswers = { ...answers, maritalStatus: body.maritalStatus }
+  }
+
   if (Object.keys(data).length === 0) {
     return Response.json({ success: false, error: { message: 'داده‌ای برای بروزرسانی ارسال نشده است' } }, { status: 400 })
   }
@@ -63,11 +80,18 @@ export async function PATCH(req: NextRequest) {
       id: true,
       name: true,
       avatarUrl: true,
+      onboardingAnswers: true,
       isPrivateProfile: true,
       hideFromLeaderboard: true,
       shareWithCoach: true,
     },
   })
 
-  return Response.json({ success: true, data: updated })
+  const answers = (updated.onboardingAnswers ?? {}) as Record<string, unknown>
+  const { onboardingAnswers, ...rest } = updated
+  void onboardingAnswers
+  return Response.json({
+    success: true,
+    data: { ...rest, maritalStatus: (answers.maritalStatus as string | null) ?? null },
+  })
 }

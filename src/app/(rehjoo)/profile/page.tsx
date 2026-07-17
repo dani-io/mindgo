@@ -112,7 +112,18 @@ export default function ProfilePage() {
           ›
         </button>
         <h1 className="text-lg font-bold" style={{ color: 'var(--content-primary)' }}>داشبورد رشد</h1>
-        <ThemeToggle compact />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/profile/edit')}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--surface-secondary)', color: 'var(--content-primary)' }}
+            aria-label="ویرایش پروفایل"
+            title="ویرایش پروفایل"
+          >
+            ✏️
+          </button>
+          <ThemeToggle compact />
+        </div>
       </div>
 
       {/* Avatar + Level Card */}

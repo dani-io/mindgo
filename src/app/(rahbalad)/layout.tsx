@@ -144,6 +144,15 @@ export default function RahbaladLayout({ children }: { children: React.ReactNode
         </div>
         {coach && (
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/coach-feedback')}
+              aria-label="ارسال بازخورد"
+              title="ارسال بازخورد"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-base active:opacity-70"
+              style={{ background: 'var(--surface-secondary)' }}
+            >
+              📝
+            </button>
             <NotificationBell />
             <button
               onClick={() => router.push('/coach-profile')}
