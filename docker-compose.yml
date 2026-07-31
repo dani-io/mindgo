@@ -1,16 +1,92 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:mindgo_secure_pass_2026@db:5432/mindgo
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://mindgo.ir}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://mindgo.ir}
+      - NEXT_PUBLIC_APP_NAME=Mindgo
+      - JWT_EXPIRY=24h
+      - SMS_PROVIDER=${SMS_PROVIDER:-selfhosted}
+      - SMS_SELFHOSTED_URL=${SMS_SELFHOSTED_URL:-http://192.168.10.90:8080}
+      - SMS_SELFHOSTED_KEY=${SMS_SELFHOSTED_KEY}
+      - TEST_PHONES=${TEST_PHONES:-09179498400,09033026179,09332707858,09172908477}
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET=mindgo
+      - S3_ACCESS_KEY=mindgo_access_key
+      - S3_SECRET_KEY=mindgo_secret_key_2026
+      - S3_REGION=us-east-1
+      - NEXT_PUBLIC_S3_PUBLIC_URL=${NEXT_PUBLIC_S3_PUBLIC_URL:-https://mindgo.ir/storage}
+      - JITSI_DOMAIN=${JITSI_DOMAIN:-meet.jit.si}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: always
+    networks:
+      - mindgo-net
+
   db:
     image: postgres:16-alpine
-    container_name: mindgo-db
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: mindgo_db
-      POSTGRES_USER: mindgo
-      POSTGRES_PASSWORD: mindgo_secret_2024
-    ports:
-      - "5432:5432"
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mindgo_secure_pass_2026
+      - POSTGRES_DB=mindgo
     volumes:
-      - mindgo_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - mindgo-net
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=mindgo_access_key
+      - MINIO_ROOT_PASSWORD=mindgo_secret_key_2026
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    networks:
+      - mindgo-net
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 mindgo_access_key mindgo_secret_key_2026;
+      mc mb local/mindgo --ignore-existing;
+      mc anonymous set public local/mindgo;
+      exit 0;
+      "
+    networks:
+      - mindgo-net
 
 volumes:
-  mindgo_data:
+  postgres_data:
+  minio_data:
+
+networks:
+  mindgo-net:
+    driver: bridge

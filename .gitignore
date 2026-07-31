@@ -55,3 +55,6 @@ next-env.d.ts
 # uploads
 /uploads/
 /tmp/
+
+# production env (secrets — see .env.example for the shape)
+.env.production

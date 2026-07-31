@@ -10,3 +10,6 @@ Dockerfile
 README.md
 .vscode
 .idea
+.env.production
+docker-compose.yml
+docker-compose.dev.yml
