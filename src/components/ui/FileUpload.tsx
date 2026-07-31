@@ -56,28 +56,69 @@ export default function FileUpload({
         return
       }
 
-      const { uploadUrl, fileUrl } = json.data
+      const { uploadUrl, fileUrl, method } = json.data
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
-        }
-        xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`${xhr.status}`))
-        xhr.onerror = () => reject(new Error('Upload failed'))
-        xhr.open('PUT', uploadUrl)
-        xhr.setRequestHeader('Content-Type', file.type)
-        xhr.send(file)
-      })
+      // The server decides how the bytes travel: POST multipart through the app
+      // when STORAGE_PROVIDER=local, or PUT straight to S3 with a signed URL.
+      const finalUrl = method === 'POST'
+        ? await postToApp(file, uploadUrl, token)
+        : await putToS3(file, uploadUrl, fileUrl)
 
-      setUploadedUrl(fileUrl)
-      onUploadComplete(fileUrl)
-    } catch {
-      setError('خطا در آپلود فایل. دوباره تلاش کنید.')
+      setUploadedUrl(finalUrl)
+      onUploadComplete(finalUrl)
+    } catch (err) {
+      // Local uploads reject with the server's validation message (bad type,
+      // too large); fall back to the generic text for network/S3 failures.
+      const msg = err instanceof Error && /[؀-ۿ]/.test(err.message) ? err.message : null
+      setError(msg ?? 'خطا در آپلود فایل. دوباره تلاش کنید.')
     } finally {
       setUploading(false)
       setProgress(0)
     }
+  }
+
+  /** Local storage: multipart POST through the app, which saves it to disk. */
+  function postToApp(file: File, uploadUrl: string, token: string | null): Promise<string> {
+    const form = new FormData()
+    form.append('folder', folder)
+    form.append('file', file)
+
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
+      }
+      xhr.onload = () => {
+        // The app stamps its own timestamp into the key, so the URL it returns
+        // is authoritative — not the one predicted by /api/upload/presigned.
+        try {
+          const res = JSON.parse(xhr.responseText)
+          if (xhr.status >= 200 && xhr.status < 300 && res.success) resolve(res.data.fileUrl)
+          else reject(new Error(res.error?.message ?? `${xhr.status}`))
+        } catch {
+          reject(new Error(`${xhr.status}`))
+        }
+      }
+      xhr.onerror = () => reject(new Error('Upload failed'))
+      xhr.open('POST', uploadUrl)
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.send(form)
+    })
+  }
+
+  /** S3: PUT the raw bytes to the presigned URL, which already encodes the key. */
+  function putToS3(file: File, uploadUrl: string, fileUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
+      }
+      xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300) ? resolve(fileUrl) : reject(new Error(`${xhr.status}`))
+      xhr.onerror = () => reject(new Error('Upload failed'))
+      xhr.open('PUT', uploadUrl)
+      xhr.setRequestHeader('Content-Type', file.type)
+      xhr.send(file)
+    })
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {

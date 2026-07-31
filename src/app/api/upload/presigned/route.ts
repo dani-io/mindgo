@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
-import { generatePresignedUploadUrl, buildKey } from '@/lib/services/upload.service'
-
-const FOLDER_LIMITS: Record<string, { maxSize: number }> = {
-  avatars:           { maxSize: 2  * 1024 * 1024 },
-  'voice-intros':    { maxSize: 10 * 1024 * 1024 },
-  'video-intros':    { maxSize: 50 * 1024 * 1024 },
-  certificates:      { maxSize: 5  * 1024 * 1024 },
-  podcasts:          { maxSize: 50 * 1024 * 1024 },
-  meditations:       { maxSize: 50 * 1024 * 1024 },
-  'chat-attachments':{ maxSize: 10 * 1024 * 1024 },
-  exercises:         { maxSize: 10 * 1024 * 1024 },
-  receipts:          { maxSize: 5  * 1024 * 1024 },
-  feedback:          { maxSize: 5  * 1024 * 1024 },
-}
+import { generatePresignedUploadUrl, buildKey, validateUpload, getStorageProvider } from '@/lib/services/upload.service'
 
 function getToken(req: NextRequest): string | null {
   return (
@@ -25,7 +12,11 @@ function getToken(req: NextRequest): string | null {
 
 // POST /api/upload/presigned
 // body: { folder, filename, contentType, fileSize? }
-// Returns: { uploadUrl, fileUrl, key }
+// Returns: { uploadUrl, method, fileUrl, key, provider }
+//
+// `method` tells the client how to send the bytes: PUT straight to S3, or POST
+// multipart to /api/upload/local. Clients must branch on it rather than assume
+// PUT — that is what makes STORAGE_PROVIDER switchable without a rebuild.
 export async function POST(req: NextRequest) {
   const raw = getToken(req)
   if (!raw) return NextResponse.json({ success: false, error: { message: 'احراز هویت الزامی است' } }, { status: 401 })
@@ -42,18 +33,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: { message: 'folder، filename و contentType الزامی است' } }, { status: 400 })
   }
 
-  const limits = FOLDER_LIMITS[folder]
-  if (!limits) {
-    return NextResponse.json({ success: false, error: { message: 'پوشه نامعتبر است' } }, { status: 400 })
-  }
-
-  if (fileSize !== null && fileSize > limits.maxSize) {
-    const mb = Math.round(limits.maxSize / 1024 / 1024)
-    return NextResponse.json({ success: false, error: { message: `حجم فایل نباید از ${mb} مگابایت بیشتر باشد` } }, { status: 400 })
+  // Folder whitelist, size cap and MIME check all live in the storage service
+  // so this route and /api/upload/local cannot drift apart.
+  const problem = validateUpload(folder, contentType, fileSize)
+  if (problem) {
+    return NextResponse.json({ success: false, error: { message: problem } }, { status: 400 })
   }
 
   const key = buildKey(folder, payload.sub, filename)
-  const { uploadUrl, fileUrl } = await generatePresignedUploadUrl(key, contentType)
+  const { uploadUrl, method, fileUrl } = await generatePresignedUploadUrl(key, contentType)
 
-  return NextResponse.json({ success: true, data: { uploadUrl, fileUrl, key } })
+  return NextResponse.json({
+    success: true,
+    data: { uploadUrl, method, fileUrl, key, provider: getStorageProvider() },
+  })
 }

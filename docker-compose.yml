@@ -16,23 +16,21 @@ services:
       - SMS_SELFHOSTED_URL=${SMS_SELFHOSTED_URL:-http://192.168.10.90:8080}
       - SMS_SELFHOSTED_KEY=${SMS_SELFHOSTED_KEY}
       - TEST_PHONES=${TEST_PHONES:-09179498400,09033026179,09332707858,09172908477}
-      - S3_ENDPOINT=http://minio:9000
-      - S3_BUCKET=mindgo
-      - S3_ACCESS_KEY=mindgo_access_key
-      - S3_SECRET_KEY=mindgo_secret_key_2026
-      - S3_REGION=us-east-1
-      - NEXT_PUBLIC_S3_PUBLIC_URL=${NEXT_PUBLIC_S3_PUBLIC_URL:-https://mindgo.ir/storage}
+      - STORAGE_PROVIDER=local
       - JITSI_DOMAIN=${JITSI_DOMAIN:-meet.jit.si}
+    volumes:
+      # Uploaded files live on the host and are served by Next.js at /uploads/*
+      - ./uploads:/app/public/uploads
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      # 127.0.0.1, not localhost: localhost resolves to ::1 in this image while
+      # the Next.js server binds IPv4, so the IPv6 attempt is refused.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 120s
     depends_on:
       db:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     restart: always
     networks:
@@ -55,49 +53,8 @@ services:
     networks:
       - mindgo-net
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=mindgo_access_key
-      - MINIO_ROOT_PASSWORD=mindgo_secret_key_2026
-    volumes:
-      - minio_data:/data
-    ports:
-      - "9001:9001"
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
-    networks:
-      - mindgo-net
-
-  minio-init:
-    image: minio/mc:latest
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 mindgo_access_key mindgo_secret_key_2026;
-      mc mb local/mindgo --ignore-existing;
-      mc anonymous set public local/mindgo;
-      exit 0;
-      "
-    networks:
-      - mindgo-net
-
 volumes:
   postgres_data:
-  minio_data:
 
 networks:
   mindgo-net:
