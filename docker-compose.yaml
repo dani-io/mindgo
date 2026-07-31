@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - DATABASE_URL=postgres://postgres:mindgo_secure_pass_2026@db:5432/mindgo
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
