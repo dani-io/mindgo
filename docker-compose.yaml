@@ -58,7 +58,7 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - "9001:9001"
+      - "9002:9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
